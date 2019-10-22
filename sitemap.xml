@@ -4,14 +4,57 @@
   
   <url>
     <loc>http://awslife.github.io/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
   </url>
   
   <url>
     <loc>http://awslife.github.io/categories/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/tags/container-os/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/tags/coreos/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/post/coreos-install/</loc>
+    <lastmod>2019-10-22T21:57:00+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/categories/kubernetes/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/post/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
   </url>
   
   <url>
     <loc>http://awslife.github.io/tags/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/tags/linux/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/tags/vmware/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://awslife.github.io/post/vmware-cmd-guide/</loc>
+    <lastmod>2019-10-22T21:57:27+09:00</lastmod>
   </url>
   
 </urlset>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>VMware on Awslife&#39;s blog</title>
+    <link>http://awslife.github.io/tags/vmware/</link>
+    <description>Recent content in VMware on Awslife&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ko-KR</language>
+    <copyright>&amp;copy;Awslife 2019</copyright>
+    <lastBuildDate>Tue, 22 Oct 2019 21:01:32 +0900</lastBuildDate>
+    
+	<atom:link href="http://awslife.github.io/tags/vmware/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>VMware Cmd Guide</title>
+      <link>http://awslife.github.io/post/vmware-cmd-guide/</link>
+      <pubDate>Tue, 22 Oct 2019 21:01:32 +0900</pubDate>
+      
+      <guid>http://awslife.github.io/post/vmware-cmd-guide/</guid>
+      <description>CoreOS 설치 자동화를 구성할때 VM에 종속되는 변수 값들을 Ignition에서 관리하기 보다는 VM의 guestinfo에 설정하여 사용하면 매우 편할것으로 판단</description>
+    </item>
+    
+  </channel>
+</rss>

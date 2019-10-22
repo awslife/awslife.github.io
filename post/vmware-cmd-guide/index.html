@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'U-12345678-0', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      
+  VMware Cmd Guide &ndash; Awslife&#39;s blog
+
+    </title>
+    
+    
+    <meta name="description" property="og:description" content="CoreOS 설치 자동화를 구성할때 VM에 종속되는 변수 값들을 Ignition에서 관리하기 보다는 VM의 guestinfo에 설정하여 사용하면 매우 편할것으로 판단|Describe what your web page is about">
+    
+
+    <meta name="apple-mobile-web-app-title" content="Awslife&#39;s blog">
+    
+    
+    <link rel="icon" href="/favicon-64.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="mask-icon" size="any" href="/pinned-icon.svg">
+    
+    
+    
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@">
+    <meta name="twitter:creator" content="@">
+    <meta name="twitter:title" content="VMware Cmd Guide | Awslife&#39;s blog">
+    <meta name="twitter:description" content="CoreOS 설치 자동화를 구성할때 VM에 종속되는 변수 값들을 Ignition에서 관리하기 보다는 VM의 guestinfo에 설정하여 사용하면 매우 편할것으로 판단|Describe what your web page is about">
+    <meta name="twitter:image" content="http://awslife.github.io/twitter-card.png">
+    
+
+
+    <link rel="stylesheet" href="/assets/syntax.css">
+    <link rel="stylesheet" href="/assets/primer-build.css">
+    <link rel="stylesheet" href="/assets/style.css">
+  </head>
+
+
+  <body class="bg-gray">
+    <div id="holy" class="container-lg bg-white h-100">
+
+      <div id="header" class="px-1 bg-white">
+        <nav class="UnderlineNav UnderlineNav--right px-2">
+  <a class="UnderlineNav-actions muted-link h2" href="http://awslife.github.io/">
+    Awslife&#39;s blog
+  </a>
+
+  
+  
+</nav>
+
+      </div>
+
+      <div role="main" id="main" class="holy-main markdown-body px-4 bg-white">
+        
+
+<div class="Subhead">
+  <div class="Subhead-heading">
+    <div class="h1 mt-3 mb-1">VMware Cmd Guide</div>
+  </div>
+  <div class="Subhead-description">
+    
+
+
+<a href='/categories/kubernetes' class="muted-link">
+  <span class="Label Label--gray-darker">Kubernetes</span>
+</a>
+
+
+
+<a href='/tags/coreos' class="muted-link">
+  <span class="Label Label--gray">CoreOS</span>
+</a>
+
+<a href='/tags/container-os' class="muted-link">
+  <span class="Label Label--gray">Container OS</span>
+</a>
+
+<a href='/tags/vmware' class="muted-link">
+  <span class="Label Label--gray">VMware</span>
+</a>
+
+<a href='/tags/linux' class="muted-link">
+  <span class="Label Label--gray">Linux</span>
+</a>
+
+
+
+    
+    <div class="float-md-right">
+      <span title="Lastmod: 2019-10-22. Published at: 2019-10-22.">
+        
+          Lastmod: 2019-10-22
+        
+      </span>
+    </div>
+    
+  </div>
+</div>
+<article>
+  
+  <section class="pb-6 mb-3 border-bottom">
+    
+
+<p>CoreOS 설치 자동화를 구성할때 VM에 종속되는 변수 값들을 Ignition에서 관리하기 보다는 VM의 guestinfo에 설정하여 사용하면 매우 편할것으로 판단되어 vmware-cmd 사용 방법을 정리하였다.</p>
+
+<h2 id="vmware-cmd-설치">vmware-cmd 설치</h2>
+
+<p>vmware-cmd를 사용하기 위해서는 먼저 vmware-cmd를 설치해야 한다. 설치는 Ubuntu 18.04에 설치하였고 자세한 설치 방법은 아래 Reference URL을 참고하기 바란다. 설치시 특별한 오류가 발생하지 않아 설치 내용은 기록하지 않는다.</p>
+
+<h2 id="vmware-cmd-연결-테스트">vmware-cmd 연결 테스트</h2>
+
+<p>vmware-cmd 설치가 완료되면 먼저 connect.pl을 사용하여 vsphere에 정상적으로 접속이 되는지 테스트를 해볼수있다. connect.pl은 /usr/lib/vmware-vcli/apps/general/connect.pl에 위치한다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ /usr/lib/vmware-vcli/apps/general/connect.pl --url https://vsphere/sdk --username root
+Enter password:
+
+Connection Successful
+Server Time : <span class="m">2019</span>-10-06T14:04:04.609423Z
+awslife@k8sdev:~$</code></pre></div>
+<h2 id="vmware-cmd-사용-방법">vmware-cmd 사용 방법</h2>
+
+<p>vmware-cmd의 자세한 사용방법은 vmware-cmd &ndash;help 명령을 사용하면 확인 가능하다. 하지만 정리의 목적은 나중에 필요할때 빠르게 찾아보기 위함이므로 많이 사용할것 같은 명령을 요약해보았다.
+아래 도움말에서도 확인가능하지만 매번 url, username, password를 입력하기 번거로우므로 VI_URL, VI_USERNAME, VI_PASSWORD 환경 변수를 사용하여 대체 가능하다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ vmware-cmd --help
+   Usage: vmware-cmd &lt;options&gt; &lt;vm-cfg-path&gt; &lt;vm-action&gt; &lt;arguments&gt;
+          vmware-cmd -s &lt;options&gt; &lt;server-action&gt; &lt;arguments&gt;
+
+     Options:
+       Connection Options:
+          -H or --server &lt;host&gt;            specifies an ESX host or a vCenter Server
+          -h or --vihost &lt;target host&gt;     specifies a target host <span class="k">if</span> host is a virtual center
+          -O &lt;port&gt;                        specifies an alternative port
+          -Q &lt;protocol&gt;                    specifies an alternative protocol
+          -U or --username &lt;username&gt;      specifies a username
+          -P or --password &lt;password&gt;      specifies a password
+          --sessionfile                    specifies a sessionfile path
+          --passthroughauth                specifies a login by sspi option
+          --credstore                      specifies to fetch Credential store information
+          --encoding                       specifies encoding option
+       General Options:
+          -h More detailed help.
+          -q Quiet. Minimal output
+          -v Verbose.
+
+     Server Operations:
+       vmware-cmd -l
+          -- lists the registered VMs
+       vmware-cmd -s register &lt;config_file_path&gt; &lt;datacenter&gt; &lt;resource pool&gt;
+          -- registers a VM
+       vmware-cmd -s unregister &lt;config_file_path&gt;
+          -- unregisters a VM
+
+
+     VM Operations:
+       vmware-cmd &lt;cfg&gt; getstate
+          -- gets the execution state of the VM
+       vmware-cmd &lt;cfg&gt; start
+          -- powers on or resumes a VM.
+       vmware-cmd &lt;cfg&gt; stop &lt;powerop_mode&gt;
+          -- stops a VM. &lt;powerop_mode&gt; can be soft, hard.
+       vmware-cmd &lt;cfg&gt; reset &lt;powerop_mode&gt;
+          -- resets a VM. &lt;powerop_mode&gt; can be soft, hard.
+       vmware-cmd &lt;cfg&gt; <span class="nb">suspend</span> &lt;powerop_mode&gt;
+          -- suspends a VM. &lt;powerop_mode&gt; can be soft, hard.
+       vmware-cmd &lt;cfg&gt; setguestinfo &lt;variable&gt; &lt;value&gt;
+          -- sets a guest info variable
+       vmware-cmd &lt;cfg&gt; getguestinfo &lt;variable&gt;
+          -- retrieves the value <span class="k">for</span> a guest info variable
+       vmware-cmd &lt;cfg&gt; getproductinfo &lt;prodinfo&gt;
+          -- gets various product information.
+             &lt;prodinfo&gt; can be product, platform, build, majorversion or minorversion
+       vmware-cmd &lt;cfg&gt; connectdevice &lt;device_name&gt;
+          -- connects a virtual device to a VM
+       vmware-cmd &lt;cfg&gt; disconnectdevice &lt;device_name&gt;
+          -- disconnects a virtual device from a VM
+       vmware-cmd &lt;cfg&gt; getconfigfile
+          -- retrieves the path to the configuration file
+       vmware-cmd &lt;cfg&gt; getuptime
+          -- retrieves the uptime of the guest OS
+       vmware-cmd &lt;cfg&gt; answer
+          -- answers a question <span class="k">for</span> a VM requesting input
+       vmware-cmd &lt;cfg&gt; gettoolslastactive
+          -- retrieves the VMware tools status.
+       vmware-cmd &lt;cfg&gt; hassnapshot
+          -- determine <span class="k">if</span> VM has a snapshot
+       vmware-cmd &lt;cfg&gt; createsnapshot &lt;name&gt; &lt;description&gt; &lt;quiesce&gt; &lt;memory&gt;
+          -- creates a snapshot of a VM
+       vmware-cmd &lt;cfg&gt; revertsnapshot
+          -- revert to the last snapshot of a VM
+       vmware-cmd &lt;cfg&gt; removesnapshots
+          -- remove all snapshots of a VM
+awslife@k8sdev:~$ <span class="nb">export</span> <span class="nv">VI_URL</span><span class="o">=</span>https://vsphere/sdk
+awslife@k8sdev:~$ <span class="nb">export</span> <span class="nv">VI_USERNAME</span><span class="o">=</span>root
+awslife@k8sdev:~$ <span class="nb">export</span> <span class="nv">VI_PASSWORD</span><span class="o">=</span>blablabla
+awslife@k8sdev:~$ /usr/lib/vmware-vcli/apps/general/connect.pl
+
+Connection Successful
+Server Time : <span class="m">2019</span>-10-06T14:09:00.255928Z
+awslife@k8sdev:~$</code></pre></div>
+<ul>
+<li><p>VM list</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ vmware-cmd -l
+
+/vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/awx/awx.vmx
+/vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8sdev/k8sdev.vmx
+/vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/autodeploy/autodeploy.vmx
+/vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8s-master1/k8s-master1.vmx
+/vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8s-master2/k8s-master2.vmx
+/vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8s-master3/k8s-master3.vmx
+awslife@k8sdev:~$</code></pre></div></li>
+
+<li><p>VM getguestinfo</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ vmware-cmd /vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8s-master1/k8s-master1.vmx getguestinfo migrate.hostLog
+getguestinfo<span class="o">(</span>migrate.hostLog<span class="o">)</span> <span class="o">=</span> ./k8s-master1-916910fb.hlog
+awslife@k8sdev:~$</code></pre></div></li>
+
+<li><p>VM setguestinfo
+&gt; VM guestinfo를 설정해보았으나 free로 제공되는 VMware vSphere ESXi에서는 get만 동작하고 set은 동작하지 않는것으로 보인다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ vmware-cmd /vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8sdev/k8sdev.vmx getguestinfo hostname
+The specified property or variable is invalid or undefined.
+awslife@k8sdev:~$ vmware-cmd /vmfs/volumes/ac5e27db-18aa9bd5-0000-000000000000/k8sdev/k8sdev.vmx setguestinfo hostname k8sdev.homelab.local
+
+SOAP Fault:
+-----------
+Fault string: Current license or ESXi version prohibits execution of the requested operation.
+Fault detail: RestrictedVersionFault
+awslife@k8sdev:~$</code></pre></div></li>
+</ul>
+
+<h2 id="reference-urls">Reference urls</h2>
+
+<ul>
+<li><a href="https://gist.github.com/minazou67/f39b28cca48a5cf4ebf70eaf52bdd975">How to install VMware vSphere CLI on Ubuntu</a></li>
+</ul>
+
+  </section>
+
+  <section>
+    
+      
+    
+  </section>
+</article>
+
+      </div>
+
+      <div id="side" class="pr-1 bg-white">
+        <aside class="pr-3">
+          
+  
+    <div id="toc" class="Box Box--blue mb-3">
+      <b>VMware Cmd Guide</b>
+      <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#vmware-cmd-설치">vmware-cmd 설치</a></li>
+<li><a href="#vmware-cmd-연결-테스트">vmware-cmd 연결 테스트</a></li>
+<li><a href="#vmware-cmd-사용-방법">vmware-cmd 사용 방법</a></li>
+<li><a href="#reference-urls">Reference urls</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+  
+
+  
+    
+    
+      <div>
+        
+
+        
+          <iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width="61" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>
+        
+
+        
+
+        
+
+      </div>
+    
+  
+
+        </aside>
+      </div>
+
+      <div id="footer" class="pt-2 pb-3 bg-white text-center">
+        
+
+  <span class="text-small text-gray">
+    &copy;Awslife 2019 &middot; 
+
+    Powered by the
+    <a href="https://github.com/qqhann/hugo-primer" class="link-gray-dark">Hugo-Primer</a> theme for
+    <a href="https://gohugo.io" class="link-gray-dark">Hugo</a>.
+  </span>
+
+
+      </div>
+    </div>
+
+
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script>
+  </body>
+</html>
