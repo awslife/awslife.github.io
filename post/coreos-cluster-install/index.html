@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-150727828-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      
+  CoreOS Cluster Install &ndash; Awslife&#39;s blog
+
+    </title>
+    
+    
+    <meta name="description" property="og:description" content="CoreOS Cluster의 Kubernetes Master 서버 설치 방법을 정리하였다. Kubernetes Cluster 구성 정보 Master Node Master Node는 3대로 구성하였으며, 각 호스트는 사전에 DNS 구성을 완료하였으며, 모두 2|Describe what your web page is about">
+    
+
+    <meta name="apple-mobile-web-app-title" content="Awslife&#39;s blog">
+    
+    
+    <link rel="icon" href="/favicon-64.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="mask-icon" size="any" href="/pinned-icon.svg">
+    
+    
+    
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@">
+    <meta name="twitter:creator" content="@">
+    <meta name="twitter:title" content="CoreOS Cluster Install | Awslife&#39;s blog">
+    <meta name="twitter:description" content="CoreOS Cluster의 Kubernetes Master 서버 설치 방법을 정리하였다. Kubernetes Cluster 구성 정보 Master Node Master Node는 3대로 구성하였으며, 각 호스트는 사전에 DNS 구성을 완료하였으며, 모두 2|Describe what your web page is about">
+    <meta name="twitter:image" content="http://awslife.github.io/twitter-card.png">
+    
+
+
+    <link rel="stylesheet" href="/assets/syntax.css">
+    <link rel="stylesheet" href="/assets/primer-build.css">
+    <link rel="stylesheet" href="/assets/style.css">
+  </head>
+
+
+  <body class="bg-gray">
+    <div id="holy" class="container-lg bg-white h-100">
+
+      <div id="header" class="px-1 bg-white">
+        <nav class="UnderlineNav UnderlineNav--right px-2">
+  <a class="UnderlineNav-actions muted-link h2" href="http://awslife.github.io/">
+    Awslife&#39;s blog
+  </a>
+
+  
+  
+</nav>
+
+      </div>
+
+      <div role="main" id="main" class="holy-main markdown-body px-4 bg-white">
+        
+
+<div class="Subhead">
+  <div class="Subhead-heading">
+    <div class="h1 mt-3 mb-1">CoreOS Cluster Install</div>
+  </div>
+  <div class="Subhead-description">
+    
+
+
+<a href='/categories/kubernetes' class="muted-link">
+  <span class="Label Label--gray-darker">Kubernetes</span>
+</a>
+
+
+
+<a href='/tags/coreos' class="muted-link">
+  <span class="Label Label--gray">CoreOS</span>
+</a>
+
+<a href='/tags/container-os' class="muted-link">
+  <span class="Label Label--gray">Container OS</span>
+</a>
+
+<a href='/tags/vmware' class="muted-link">
+  <span class="Label Label--gray">VMware</span>
+</a>
+
+<a href='/tags/linux' class="muted-link">
+  <span class="Label Label--gray">Linux</span>
+</a>
+
+
+
+    
+    <div class="float-md-right">
+      <span title="Lastmod: 2019-10-23. Published at: 2019-10-23.">
+        
+          Lastmod: 2019-10-23
+        
+      </span>
+    </div>
+    
+  </div>
+</div>
+<article>
+  
+  <section class="pb-6 mb-3 border-bottom">
+    
+
+<p>CoreOS Cluster의 Kubernetes Master 서버 설치 방법을 정리하였다.</p>
+
+<h2 id="kubernetes-cluster-구성-정보">Kubernetes Cluster 구성 정보</h2>
+
+<ul>
+<li>Master Node
+Master Node는 3대로 구성하였으며, 각 호스트는 사전에 DNS 구성을 완료하였으며, 모두 2 vCores, 2 GB Memory, 8 GB 스토리지로 구성하였다.
+
+<ul>
+<li>k8s-master1.homelab.local : 192.168.11.230</li>
+<li>k8s-master2.homelab.local : 192.168.11.231</li>
+<li>k8s-master3.homelab.local : 192.168.11.232</li>
+</ul></li>
+<li>Workder Node
+Worker Node도 마찬가지로 3대로 구성하였으며, 각 호스트는 설치 전에 DNS 구성을 완료하였으며, 모두 4 vCores, 8 GB Memory, 64 GB 스토리지로 구성하였다.
+
+<ul>
+<li>k8s-worker1.homelab.local : 192.168.11.233</li>
+<li>k8s-worker2.homelab.local : 192.168.11.234</li>
+<li>k8s-worker3.homelab.local : 192.168.11.235</li>
+</ul></li>
+</ul>
+
+<h2 id="kubernetes-설치-순서">Kubernetes 설치 순서</h2>
+
+<p>Kubernetes Cluster 설치 순서는 아래의 프로세스로 진행된다.</p>
+
+<ul>
+<li>Kubernetes components 간의 연결을 위한 인증서 생성</li>
+<li>Kubernetes cluster를 위한 flannel networking 구성</li>
+<li>Kubernetes Master 노드 설정</li>
+<li>Kubernetes Worker 노드 설정</li>
+<li>kubectl 설정</li>
+<li>구성 테스트</li>
+</ul>
+
+<p>이번글에서는 Master Node 설정까지 진행해보기로 한다.</p>
+
+<h3 id="kubernetes-components-간의-연결을-위한-인증서-생성">Kubernetes components 간의 연결을 위한 인증서 생성</h3>
+
+<p>Kubernetes components 간의 암호화된 연결을 위해 만들어야 하는 인증서는 크게 3가지이다.</p>
+
+<ul>
+<li><p>Root CA 공용키 및 개인키</p>
+
+<ul>
+<li>ca.pem</li>
+<li>ca-key.pem</li>
+</ul></li>
+
+<li><p>API server 공용키 및 개인키</p>
+
+<ul>
+<li>k8s-master[1-3].pem</li>
+<li>k8s-master[1-3]_key.pem</li>
+</ul></li>
+
+<li><p>Worker node 공용키 및 개인키</p>
+
+<ul>
+<li>k8s-worker[1-3].pem</li>
+<li>k8s-worker[1-3]_key.pem</li>
+</ul></li>
+</ul>
+
+<p>증서 생성 스크립트를 먼저 작성하였고, 이를 이용하여 인증서를 생성하였다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~/Documents/kube-ssl$ cat gen_certs.sh
+<span class="c1">#!/bin/bash</span>
+
+<span class="c1"># Deleting pem, csr, cnf files</span>
+rm ./*.pem ./*.csr ./*.cnf ./*.srl
+
+<span class="nb">declare</span> -a <span class="nv">MASTERS</span><span class="o">=(</span> <span class="s2">&#34;k8s-master1.homelab.local&#34;</span> <span class="s2">&#34;k8s-master2.homelab.local&#34;</span> <span class="s2">&#34;k8s-master3.homelab.local&#34;</span> <span class="o">)</span>
+<span class="nb">declare</span> -a <span class="nv">MASTERS_IP</span><span class="o">=(</span> <span class="s2">&#34;192.168.11.230&#34;</span> <span class="s2">&#34;192.168.11.231&#34;</span> <span class="s2">&#34;192.168.11.232&#34;</span> <span class="o">)</span>
+<span class="nb">declare</span> -a <span class="nv">WORKERS</span><span class="o">=(</span> <span class="s2">&#34;k8s-worker1.homelab.local&#34;</span> <span class="s2">&#34;k8s-worker2.homelab.local&#34;</span> <span class="s2">&#34;k8s-worker3.homelab.local&#34;</span> <span class="o">)</span>
+<span class="nb">declare</span> -a <span class="nv">WORKERS_IP</span><span class="o">=(</span> <span class="s2">&#34;192.168.11.233&#34;</span> <span class="s2">&#34;192.168.11.234&#34;</span> <span class="s2">&#34;192.168.11.235&#34;</span> <span class="o">)</span>
+
+<span class="c1"># Creating TLS certs</span>
+<span class="nb">echo</span> <span class="s2">&#34;Creating CA ROOT**********************************************************************&#34;</span>
+openssl genrsa -out ca-key.pem <span class="m">2048</span>
+openssl req -x509 -new -nodes -key ca-key.pem -days <span class="m">10000</span> -out ca.pem -subj <span class="s2">&#34;/CN=kube-ca&#34;</span>
+
+cat &gt;openssl-master.cnf<span class="s">&lt;&lt;EOF
+</span><span class="s">[req]
+</span><span class="s">req_extensions = v3_req
+</span><span class="s">distinguished_name = req_distinguished_name
+</span><span class="s">[req_distinguished_name]
+</span><span class="s">[ v3_req ]
+</span><span class="s">basicConstraints = CA:FALSE
+</span><span class="s">keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+</span><span class="s">subjectAltName = @alt_names
+</span><span class="s">[alt_names]
+</span><span class="s">DNS.1 = kubernetes
+</span><span class="s">DNS.2 = kubernetes.default
+</span><span class="s">DNS.3 = kubernetes.default.svc
+</span><span class="s">DNS.4 = kubernetes.default.svc.cluster.local
+</span><span class="s">DNS.5 = \$ENV::HOSTNAME
+</span><span class="s">IP.1 = \$ENV::MASTER_IP
+</span><span class="s">EOF</span>
+
+<span class="k">for</span> <span class="o">((</span> <span class="nv">c</span><span class="o">=</span><span class="m">1</span><span class="p">;</span> c&lt;<span class="o">=</span> <span class="si">${#</span><span class="nv">MASTERS</span><span class="p">[@]</span><span class="si">}</span><span class="p">;</span> c++ <span class="o">))</span>
+<span class="k">do</span>
+	<span class="nb">echo</span> <span class="s2">&#34;creating API Server certs*************************************************************&#34;</span>
+  openssl genrsa -out k8s-master<span class="si">${</span><span class="nv">c</span><span class="si">}</span>_key.pem <span class="m">2048</span>
+	<span class="nv">MASTER_IP</span><span class="o">=</span><span class="si">${</span><span class="nv">MASTERS_IP</span><span class="p">[c-1]</span><span class="si">}</span> <span class="nv">HOSTNAME</span><span class="o">=</span><span class="si">${</span><span class="nv">MASTERS</span><span class="p">[c-1]</span><span class="si">}</span> openssl req -new -key k8s-master<span class="si">${</span><span class="nv">c</span><span class="si">}</span>_key.pem -out k8s-master<span class="nv">$c</span>.csr -subj <span class="s2">&#34;/CN=k8s-master</span><span class="nv">$c</span><span class="s2">.homelab.local&#34;</span> -config openssl-master.cnf
+	<span class="nv">MASTER_IP</span><span class="o">=</span><span class="si">${</span><span class="nv">MASTERS_IP</span><span class="p">[c-1]</span><span class="si">}</span> <span class="nv">HOSTNAME</span><span class="o">=</span><span class="si">${</span><span class="nv">MASTERS</span><span class="p">[c-1]</span><span class="si">}</span> openssl x509 -req -in k8s-master<span class="nv">$c</span>.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out k8s-master<span class="nv">$c</span>.pem -days <span class="m">365</span> -extensions v3_req -extfile openssl-master.cnf
+<span class="k">done</span>
+
+<span class="nb">echo</span> <span class="s2">&#34;Creating worker nodes&#34;</span>
+cat &gt; openssl-worker.cnf<span class="s">&lt;&lt; EOF
+</span><span class="s">[req]
+</span><span class="s">req_extensions = v3_req
+</span><span class="s">distinguished_name = req_distinguished_name
+</span><span class="s">[req_distinguished_name]
+</span><span class="s">[ v3_req ]
+</span><span class="s">basicConstraints = CA:FALSE
+</span><span class="s">keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+</span><span class="s">subjectAltName = @alt_names
+</span><span class="s">[alt_names]
+</span><span class="s">DNS.1 = \$ENV::HOSTNAME
+</span><span class="s">IP.1 = \$ENV::WORKER_IP
+</span><span class="s">EOF</span>
+
+<span class="k">for</span> <span class="o">((</span> <span class="nv">c</span><span class="o">=</span><span class="m">1</span><span class="p">;</span> c&lt;<span class="o">=</span> <span class="si">${#</span><span class="nv">WORKERS</span><span class="p">[@]</span><span class="si">}</span><span class="p">;</span> c++ <span class="o">))</span>
+<span class="k">do</span>
+   openssl genrsa -out k8s-worker<span class="si">${</span><span class="nv">c</span><span class="si">}</span>_key.pem <span class="m">2048</span>
+   <span class="nv">WORKER_IP</span><span class="o">=</span><span class="si">${</span><span class="nv">WORKERS_IP</span><span class="p">[c-1]</span><span class="si">}</span> <span class="nv">HOSTNAME</span><span class="o">=</span><span class="si">${</span><span class="nv">WORKERS</span><span class="p">[c-1]</span><span class="si">}</span> openssl req -new -key k8s-worker<span class="si">${</span><span class="nv">c</span><span class="si">}</span>_key.pem -out k8s-worker<span class="nv">$c</span>.csr -subj <span class="s2">&#34;/CN=k8s-worker</span><span class="nv">$c</span><span class="s2">.homelab.local&#34;</span> -config openssl-worker.cnf
+   <span class="nv">WORKER_IP</span><span class="o">=</span><span class="si">${</span><span class="nv">WORKERS_IP</span><span class="p">[c-1]</span><span class="si">}</span> <span class="nv">HOSTNAME</span><span class="o">=</span><span class="si">${</span><span class="nv">WORKERS</span><span class="p">[c-1]</span><span class="si">}</span> openssl x509 -req -in k8s-worker<span class="nv">$c</span>.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out k8s-worker<span class="nv">$c</span>.pem -days <span class="m">365</span> -extensions v3_req -extfile openssl-worker.cnf
+<span class="k">done</span>
+
+<span class="nb">echo</span> <span class="s2">&#34;Creating Admin certs********************************************************&#34;</span>
+openssl genrsa -out admin-key.pem <span class="m">2048</span>
+openssl req -new -key admin-key.pem -out admin.csr -subj <span class="s2">&#34;/CN=kube-admin&#34;</span>
+openssl x509 -req -in admin.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out admin.pem -days <span class="m">365</span>
+awslife@k8sdev:~/Documents/kube-ssl$ ls -ltr
+total <span class="m">108</span>
+-rwxr-x--- <span class="m">1</span> awslife awslife <span class="m">2893</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 gen_certs.sh
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1675</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 ca-key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife  <span class="m">407</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 openssl-master.cnf
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1107</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 ca.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1679</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master1_key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1163</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master1.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1249</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master1.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1679</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master2_key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1163</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master2.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1249</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master2.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1675</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master3_key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1163</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master3.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife  <span class="m">285</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 openssl-worker.cnf
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1249</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-master3.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1679</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker1_key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1029</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker1.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1115</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker1.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1679</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker2_key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1029</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker2.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1115</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker2.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1675</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker3_key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1029</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker3.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife <span class="m">1115</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 k8s-worker3.pem
+-rw------- <span class="m">1</span> awslife awslife <span class="m">1679</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 admin-key.pem
+-rw-rw-r-- <span class="m">1</span> awslife awslife  <span class="m">891</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 admin.csr
+-rw-rw-r-- <span class="m">1</span> awslife awslife   <span class="m">41</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 ca.srl
+-rw-rw-r-- <span class="m">1</span> awslife awslife  <span class="m">989</span> 10월 <span class="m">15</span> <span class="m">22</span>:37 admin.pem
+awslife@k8sdev:~/Documents/kube-ssl$</code></pre></div>
+<h3 id="coreos-환경-설정">CoreOS 환경 설정</h3>
+
+<p>CoreOS 버전이 올라감에 따라 친숙한 cloud-config에서 Ignition으로 변경되었다. 다행히 cloud-config에서 사용되던 yaml 파일을 coreos-ct를 통하여 Ignition으로 일괄 변경 가능하다. Mac에서는 brew를 통하여 설치 가능하다.</p>
+
+<h3 id="master-설치-진행">Master 설치 진행</h3>
+
+<p>Master Node 1번에 대해 설치를 진행해 보았다. k8s-master1에 대한 설정은 k8s-master1와 동일하며 2,3번의 경우 IP, Hostname, PEM만 다르고 나머지는 동일하다. 만들어진 Yaml 파일을 ct 명령을 사용하여 Ignition Format으로 변경하자. (ct 명령에 대한 사용법 및 설치 방법은 아래 Reference에 자세하게 정리되어 있다.)</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ cat k8s-master1.yml
+---
+storage:
+  disks:
+    - device: /dev/sda
+      wipe_table: <span class="nb">true</span>
+      partitions:
+        - label: ROOT
+  filesystems:
+    - name: ROOT
+      mount:
+        device: <span class="s2">&#34;/dev/disk/by-partlabel/ROOT&#34;</span>
+        format: <span class="s2">&#34;ext4&#34;</span>
+        wipe_filesystem: <span class="nb">true</span>
+  files:
+    - filesystem: <span class="s2">&#34;root&#34;</span>
+      path:       <span class="s2">&#34;/etc/metadata/coreos&#34;</span>
+      mode:       <span class="m">0644</span>
+      contents:
+        inline: <span class="p">|</span>
+          <span class="nv">HOSTNAME</span><span class="o">=</span>k8s-master1.homelab.local
+    - filesystem: <span class="s2">&#34;root&#34;</span>
+      path:       <span class="s2">&#34;/etc/hostname&#34;</span>
+      mode:       <span class="m">0644</span>
+      contents:
+        inline: k8s-master1.homelab.local
+    - path: /etc/environment
+      filesystem: root
+      mode: <span class="m">0644</span>
+      contents:
+        inline: <span class="p">|</span>
+          <span class="nv">HOSTNAME</span><span class="o">=</span>k8s-master1.homelab.local
+          <span class="nv">ADVERTISE_IP</span><span class="o">=</span><span class="m">192</span>.168.11.230
+          <span class="nv">COREOS_PRIVATE_IPV4</span><span class="o">=</span><span class="m">192</span>.168.11.230
+          <span class="nv">ETCDCTL_SSL_DIR</span><span class="o">=</span>/var/lib/etcd/ssl
+          <span class="nv">ETCD_SSL_DIR</span><span class="o">=</span>/var/lib/etcd/ssl
+          <span class="nv">ETCDCTL_CA_FILE</span><span class="o">=</span>/var/lib/etcd/ssl/certs/ca.pem
+          <span class="nv">ETCDCTL_CERT_FILE</span><span class="o">=</span>/var/lib/etcd/ssl/k8s-master1.pem
+          <span class="nv">ETCDCTL_KEY_FILE</span><span class="o">=</span>/var/lib/etcd/ssl/k8s-master1_key.pem
+          <span class="nv">ETCDCTL_ENDPOINTS</span><span class="o">=</span><span class="s2">&#34;https://192.168.11.230:2379,https://192.168.11.231:2379,https://192.168.11.232:2379&#34;</span>
+          <span class="nv">ETCD_ENDPOINTS</span><span class="o">=</span><span class="s2">&#34;https://192.168.11.230:2379,https://192.168.11.231:2379,https://192.168.11.232:2379&#34;</span>
+          <span class="nv">FLANNELD_ETCD_ENDPOINTS</span><span class="o">=</span><span class="s2">&#34;https://192.168.11.230:2379,https://192.168.11.231:2379,https://192.168.11.232:2379&#34;</span>
+          <span class="nv">FLANNELD_IFACE</span><span class="o">=</span><span class="s2">&#34;ens192&#34;</span>
+          <span class="nv">FLANNELD_ETCD_PREFIX</span><span class="o">=</span><span class="s2">&#34;/coreos.com/network&#34;</span>
+          <span class="nv">kubernetes_version</span><span class="o">=</span><span class="m">1</span>.8.0
+          <span class="nv">LOCKSMITHCTL_ETCD_CAFILE</span><span class="o">=</span>/var/lib/etcd/ssl/ca.pem
+          <span class="nv">LOCKSMITHCTL_ETCD_CERTFILE</span><span class="o">=</span>/var/lib/etcd/ssl/k8s-master1.pem
+          <span class="nv">LOCKSMITHCTL_ETCD_KEYFILE</span><span class="o">=</span>/var/lib/etcd/ssl/k8s-master1_key.pem
+          <span class="nv">LOCKSMITHCTL_ENDPOINT</span><span class="o">=</span><span class="s2">&#34;https://192.168.11.230:2379&#34;</span>
+    - path: /etc/systemd/timesyncd.conf
+      filesystem: root
+      mode: <span class="m">0644</span>
+      contents:
+        inline: <span class="p">|</span>
+          <span class="o">[</span>Time<span class="o">]</span>
+          <span class="nv">NTP</span><span class="o">=</span><span class="m">0</span>.kp.pool.ntp.org <span class="m">1</span>.kr.pool.ntp.org
+    - path: /etc/timezone
+      filesystem: root
+      mode: <span class="m">0644</span>
+      contents:
+        inline: Asia/Seoul
+    - path: /var/lib/etcd/ssl/ca.pem
+      filesystem: root
+      mode: <span class="m">0644</span>
+      contents:
+        inline: <span class="p">|</span>
+          -----BEGIN CERTIFICATE-----
+          MIIDBTCCAe2gAwIBAgIUR8OQkqfhPCreDJbi/s+35KoOkS8wDQYJKoZIhvcNAQEL
+          BQAwEjEQMA4GA1UEAwwHa3ViZS1jYTAeFw0xOTEwMTUxMzM3MTZaFw00NzAzMDIx
+          MzM3MTZaMBIxEDAOBgNVBAMMB2t1YmUtY2EwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+          DwAwggEKAoIBAQDJlZRGYT6TRL9208r1WiVFhtH7hdZa6YJaxQCryMv2bmDty3ID
+          8Hbk5GjJs0mIwCylve8LSb0TCHuLWJjit8Z5k64Sv2ic/pPpxBXfAxRbJ7pR1PsY
+          cBrwWz3bTUt6CJovWTpxHvZr0tm4MCb4u7I8vVstKy+XohKqwkPSg/20MtFdUo8T
+          HjxlcNKVyucNVhCM4YFDnuSgVSwQ6/+rLKodRlYmWqw88prMHD+izmPvqqeCvQJZ
+          nXAyVkmXSJg0EMagXZVA43+fGmGuUKUxrVgRkAEEFmjHYQDhd1ZDLCkbkOt3g65E
+          YtD/t2wukF/NMmNZ9zOzj5e8pSaML8nRSRNlAgMBAAGjUzBRMB0GA1UdDgQWBBST
+          pFoWvU8aY/IA5eDK7vSgwxQBozAfBgNVHSMEGDAWgBSTpFoWvU8aY/IA5eDK7vSg
+          wxQBozAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQASvWlco0zJ
+          NCWM1pVRmM+uhNxyzjmLdt4pDpvKOoAdOBSmbY0eSKBISOW9XFHMC2WcllIw/lGD
+          VO/pcV+TZ0ks5lWxUMTiTjBMe0jYJyRZLfDGq67AiG0ktl/avqOBzydF5qUQMa3V
+          k1JO9+4MqFljPWm1dWkyEbqGJ7Lz/zqdFoz9QzNNUh3tgJHVlJOzDnHwP6Lta75h
+          RNWxn6I3oZMDD54JK53Ib+CIUwJaNKKQg+OsxeND9uTLi3gSrKJPPPQeQ+oF39GM
+          gYIIcsJmYHeZbQb8fQSwrbm7tB3f7S2TwKPKi2PlliZ4fYzaLn93BooBXK4qqxPx
+          Ra7TzspoTT8+
+          -----END CERTIFICATE-----
+    - path: /var/lib/etcd/ssl/k8s-master1.pem
+      filesystem: root
+      mode: <span class="m">0644</span>
+      contents:
+        inline: <span class="p">|</span>
+          -----BEGIN CERTIFICATE-----
+          MIIDbDCCAlSgAwIBAgIUIXhUA0AVCL8apePfm7/qfdFD00owDQYJKoZIhvcNAQEL
+          BQAwEjEQMA4GA1UEAwwHa3ViZS1jYTAeFw0xOTEwMTUxMzM3MTZaFw0yMDEwMTQx
+          MzM3MTZaMCQxIjAgBgNVBAMMGWs4cy1tYXN0ZXIxLmhvbWVsYWIubG9jYWwwggEi
+          MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDzGltWrnzrkW3qSy0amrGjaa+6
+          hFXKKXe1e5dJR+D2OL5uE77Pbu6TnceFPsgZQorZEcWjONmyQ8tH7Q+q83s5Zs5B
+          wA4yB+b9io0ZW4Zruj7o8SMnsy5ew4vxXRIe7PhHVXKNrnq07dcZ3lJkLXliSymC
+          NehSdFS7HXG5B7WIYo7UW0uH/aUixdHLM1jRwTIJHIWykl6sqe2WQoCsKrdzS/d/
+          UWH46MNmoXgF6D7+/7Vkcf7frWBdfNgnnmUJPNrHDAWv1oCEuGlG1YZnY+hZdTUX
+          CewjeehXL/w7ppzr7pX38L+OgO7wDRK/XXWB7Izr20V3Pg6hzGyjJAIa6IX9AgMB
+          AAGjgacwgaQwCQYDVR0TBAIwADALBgNVHQ8EBAMCBeAwgYkGA1UdEQSBgTB/ggpr
+          dWJlcm5ldGVzghJrdWJlcm5ldGVzLmRlZmF1bHSCFmt1YmVybmV0ZXMuZGVmYXVs
+          dC5zdmOCJGt1YmVybmV0ZXMuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbIIZazhz
+          LW1hc3RlcjEuaG9tZWxhYi5sb2NhbIcEwKgL5jANBgkqhkiG9w0BAQsFAAOCAQEA
+          T/D2lQiMu4JX3xFn4tfb2WiXQ0eswn6fpJedAlGqjQ885LbNp+WaZ5PguL/6Il48
+          AJVj2pEFgMbtpiDWLj/1/3EpwwwfvnEZgc3wNDWc4RUvwn+dDkqpbOrX5akUCD+E
+          lN3CrOdHhLXcKxTiImSanRc4ZmMuSiAXrDBM0FPYVSeX1OtRYo0ckj9ajHNC6gnS
+          ot2le5IgM+zL1Flomb1G+eXE7uE0OdKLXHmIodd5jhJjlIpgnYXHYhy4zP9PU7vJ
+          u+neYL+TRqVKw26rDnDKW4gABxTVml3tiK9NvItsRSYMBO8Yi1p3/Ogqkc56bTeA
+          <span class="nv">LDDBjBxq4iGH9FkLTE8RBA</span><span class="o">==</span>
+          -----END CERTIFICATE-----
+    - path: /var/lib/etcd/ssl/k8s-master1_key.pem
+      filesystem: root
+      mode: <span class="m">0644</span>
+      contents:
+        inline: <span class="p">|</span>
+          -----BEGIN RSA PRIVATE KEY-----
+          MIIEpAIBAAKCAQEA8xpbVq5865Ft6kstGpqxo2mvuoRVyil3tXuXSUfg9ji+bhO+
+          z27uk53HhT7IGUKK2RHFozjZskPLR+0PqvN7OWbOQcAOMgfm/YqNGVuGa7o+6PEj
+          J7MuXsOL8V0SHuz4R1Vyja56tO3XGd5SZC15YkspgjXoUnRUux1xuQe1iGKO1FtL
+          h/2lIsXRyzNY0cEyCRyFspJerKntlkKArCq3c0v3f1Fh+OjDZqF4Beg+/v+1ZHH+
+          361gXXzYJ55lCTzaxwwFr9aAhLhpRtWGZ2PoWXU1FwnsI3noVy/8O6ac6+6V9/C/
+          joDu8A0Sv111geyM69tFdz4OocxsoyQCGuiF/QIDAQABAoIBAQDuMRPvkZWaZmrw
+          1mnCGHIW8BWbRdCc/RZqvkbUKVZVSfHj/vrFWibugfidKI98mINc/pnMPIaosN47
+          gh4I3PoOmxlauOfvw2hjYd6wSsohQWIkcSiF3H2Bok261vtLS9pUYneUNLHMFwHc
+          OcY2m4vEcGqiR1lzeMIQeGAV8GTA1A+vOUoFdReBadNcAKnxPJQR520/3ggf5m4w
+          DxfBYDdC2ZCvGDcr4v5iG4b7HPZkzxcKkDymuXd0z3N4MgqYpkhlaNxesvQSitvT
+          cuYgOZkAdDzZS3xvHmvE9kpPV/M/Lt32zTH7ipM31AouqmTagTJL/5JiqBjG18He
+          yXnmqE3tAoGBAP7GcW/LnACHTJQTineT8eS0+Hhyro90Wak8SqwNKCsjc6+Jtpes
+          NGlQPnBGTyyDuyPcpAFQAGNiIJ55ZSEroOGwLZ+lKE3ZUB5Q7scTFwhSkjQA/Bp1
+          b/lhwAU6fv1rhNHeSRCWoy6FEH82TDK1dQT93pz8MGg5GoHsoWlYsUsvAoGBAPRF
+          jGeGDcQsGE8AJnxs5R3Bz1I1/FgFXWkw3R/KAci6ABAD02KDO/7RnLGqE+nQU6q1
+          RKqpSj5+ptPxzwgP2sKGL2v82WUjvTuO/zc0sdBzVjtGPH0jh0LCIL1MS7BMFDCz
+          Oi5HD3eWMZycQuCylbkpN+U7yz7MTB/xDMg1TMaTAoGAB1Pz3VBQ61743+Vz/R5/
+          PaHK58P8q1mgXpLCXxJ9zkfVwv3GB7THSSQqt5X+Hvym/FATU4pWiIVBBO3e78ZO
+          eU9U8JuSfjK68DRJueYdqnqdg+tnVOd90gFywXO+RVG7X0HyfgynIuZm5BHOvUKk
+          3ADlT0Sdq9HApm4E8n+/kbcCgYBYgrbscBue4KdyQMixPzgJ/0cjL+Ke9lqxmf4V
+          3bmlxRfutaQrxwe/Pq67hbgvechHS+V0vWDkojnLBIyTDEOlRr/6LiWLy1ZvNVJu
+          644ezRwK4Flcsrn5S6RXU0T9vaN3Pgov6JnHKEoTyF9HUg6EiFXznyX3PEm9LTgH
+          d6C5NwKBgQC9urdwyI3OT/76jEiXg1Sp6gmzcoXd+DYV4zASTB+0BqHT2u0BVPZM
+          oCsQo+mU2El5Gxa/R7zaVXpwxikxhFl8WYc5NxDgXjBuuqkZSXyKttX/v94ofyc+
+          <span class="nv">kZEONqJL90SJxiTus6KILYuRSHoNNe2eebazZyR3YXdR8EhEvp3gsg</span><span class="o">==</span>
+          -----END RSA PRIVATE KEY-----
+
+passwd:
+  users:
+    - name: core
+      password_hash: <span class="s2">&#34;blablabla...&#34;</span>
+      groups:
+        - sudo
+        - docker
+      ssh_authorized_keys:
+        - <span class="s2">&#34;ssh-rsa AAAAB......&#34;</span>
+
+networkd:
+  units:
+    - name: <span class="m">00</span>-ens192.network
+      contents: <span class="p">|</span>
+        <span class="o">[</span>Match<span class="o">]</span>
+        <span class="nv">Name</span><span class="o">=</span>ens192
+
+        <span class="o">[</span>Network<span class="o">]</span>
+        <span class="nv">LinkLocalAddressing</span><span class="o">=</span>no
+        <span class="nv">IPv6AcceptRA</span><span class="o">=</span>no
+        <span class="nv">DNS</span><span class="o">=</span><span class="m">192</span>.168.11.3
+        <span class="nv">Address</span><span class="o">=</span><span class="m">192</span>.168.11.230/24
+        <span class="nv">Gateway</span><span class="o">=</span><span class="m">192</span>.168.11.1
+        <span class="nv">Domains</span><span class="o">=</span>homelab.local
+
+flannel:
+  etcd_prefix:    <span class="s2">&#34;/coreos.com/network&#34;</span>
+  etcd_endpoints: <span class="s2">&#34;https://192.168.11.230:2379,https://192.168.11.231:2379,https://192.168.11.232:2379&#34;</span>
+  etcd_cafile:    /var/lib/etcd/ssl/ca.pem
+  etcd_certfile:  /var/lib/etcd/ssl/k8s-master1.pem
+  etcd_keyfile:   /var/lib/etcd/ssl/k8s-master1_key.pem
+  interface:      ens192
+
+etcd:
+  version: <span class="m">3</span>.2.17
+  name: k8s-master1
+  data_dir: /var/lib/etcd
+  listen_peer_urls:            https://192.168.11.230:2380
+  listen_client_urls:          https://192.168.11.230:2379
+  initial_advertise_peer_urls: https://192.168.11.230:2380
+  initial_cluster:             k8s-master1<span class="o">=</span>https://192.168.11.230:2380,k8s-master2<span class="o">=</span>https://192.168.11.231:2380,k8s-master3<span class="o">=</span>https://192.168.11.232:2380
+  initial_cluster_state:       new
+  initial_cluster_token:       etcd-cluster-homelab-local
+  advertise_client_urls:       https://k8s-master1.homelab.local:2379,https://192.168.11.230:2379
+  client_cert_auth:            <span class="nb">true</span>
+  trusted_ca_file:             /var/lib/etcd/ssl/ca.pem
+  cert_file:                   /var/lib/etcd/ssl/k8s-master1.pem
+  key_file:                    /var/lib/etcd/ssl/k8s-master1_key.pem
+  peer_client_cert_auth:       <span class="nb">true</span>
+  peer_trusted_ca_file:        /var/lib/etcd/ssl/ca.pem
+  peer_cert_file:              /var/lib/etcd/ssl/k8s-master1.pem
+  peer_key_file:               /var/lib/etcd/ssl/k8s-master1_key.pem
+  auto_compaction_retention:   <span class="m">1</span>
+
+systemd:
+  units:
+    - name: etcd-member.service
+      enabled: <span class="nb">true</span>
+      dropins:
+        - name: ssl-etcd-member.conf
+          contents: <span class="p">|</span>
+            <span class="o">[</span>Service<span class="o">]</span>
+            <span class="nv">EnvironmentFile</span><span class="o">=</span>/etc/environment
+    - name: settimezone.service
+      enabled: <span class="nb">true</span>
+      dropins:
+        - name: local-timezone.conf
+          contents: <span class="p">|</span>
+            <span class="o">[</span>Unit<span class="o">]</span>
+            <span class="nv">Description</span><span class="o">=</span>Set the <span class="nb">time</span> zone
+
+            <span class="o">[</span>Service<span class="o">]</span>
+            <span class="nv">ExecStart</span><span class="o">=</span>/usr/bin/timedatectl set-timezone Asia/Seoul
+            <span class="nv">RemainAfterExit</span><span class="o">=</span>yes
+            <span class="nv">Type</span><span class="o">=</span>oneshot
+    - name: docker.service
+      enabled: <span class="nb">true</span>
+      dropins:
+        - name: <span class="m">50</span>-insecure-registry.conf
+          contents: <span class="p">|</span>
+            <span class="o">[</span>Service<span class="o">]</span>
+            <span class="nv">Environment</span><span class="o">=</span><span class="nv">DOCKER_OPTS</span><span class="o">=</span><span class="s1">&#39;&#39;</span>
+    - name: flanneld.service
+      dropins:
+        - name: <span class="m">50</span>-ssl.conf
+          contents: <span class="p">|</span>
+            <span class="o">[</span>Service<span class="o">]</span>
+            <span class="nv">EnvironmentFile</span><span class="o">=</span>/etc/environment
+    - name: flanneld.service
+      dropins:
+        - name: <span class="m">50</span>-network-config.conf
+          contents: <span class="p">|</span>
+            <span class="o">[</span>Service<span class="o">]</span>
+            <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/etcdctl <span class="nb">set</span> /coreos.com/network/config <span class="s1">&#39;{ &#34;Network&#34;: &#34;10.1.0.0/16&#34; }&#39;</span>
+awslife@k8sdev:~$ ct --platform<span class="o">=</span>custom &lt; k8s-master1.yml &gt; k8s-master1.json
+awslife@k8sdev:~$</code></pre></div>
+<h2 id="관련-오류-조치-방법">관련 오류 조치 방법</h2>
+
+<ul>
+<li><p>RAND_load_file:Cannot open file:../crypto/rand/randfile.c:88:Filename=/home/awslife/.rnd</p>
+
+<p>.rnd 파일을 불러올수 없을때 발생하는 오류로 아래와 같이 random 파일을 생성해주면 해결 가능하다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~/Documents/kube-ssl$ openssl req -x509 -new -nodes -key ca-key.pem -days <span class="m">10000</span> -out ca.pem -subj <span class="s2">&#34;/CN=kube-ca&#34;</span>
+Can<span class="err">&#39;</span>t load /home/awslife/.rnd into RNG
+<span class="m">140496279937472</span>:error:2406F079:random number generator:RAND_load_file:Cannot open file:../crypto/rand/randfile.c:88:Filename<span class="o">=</span>/home/awslife/.rnd
+awslife@k8sdev:~/Documents/kube-ssl$ openssl rand -writerand ~/.rnd
+awslife@k8sdev:~/Documents/kube-ssl$ openssl req -x509 -new -nodes -key ca-key.pem -days <span class="m">10000</span> -out ca.pem -subj <span class="s2">&#34;/CN=kube-ca&#34;</span>
+awslife@k8sdev:~/Documents/kube-ssl$</code></pre></div></li>
+</ul>
+
+<h2 id="reference-urls">Reference urls</h2>
+
+<ul>
+<li><a href="https://github.com/coreos/coreos-kubernetes">Kubernetes on CoreOS Container Linux</a></li>
+<li><a href="https://upcloud.com/community/tutorials/deploy-kubernetes-coreos/">How to deploy Kubernetes on CoreOS cluster</a></li>
+<li><a href="https://medium.com/@kasun.dsilva/setup-kubernetes-on-coreos-f801e6db8dec">Setup Kubernetes on CoreOS</a></li>
+<li><a href="https://github.com/etcd-io/etcd/blob/master/Documentation/op-guide/clustering.md">Clustering.md</a></li>
+<li><a href="https://github.com/coreos/container-linux-config-transpiler/blob/v0.8.0/doc/dynamic-data.md#custom-metadata-providers">Referencing dynamic data</a></li>
+<li><a href="https://etcd.io/docs/v3.4.0/platforms/container-linux-systemd/">Container Linux with systemd</a></li>
+<li><a href="https://www.devtech101.com/2017/11/02/coreos-container-linux-3-node-linux-sample-configs-node-1/">Coreos Container Linux 3 Node Linux Sample Config Node</a></li>
+</ul>
+
+  </section>
+
+  <section>
+    
+      
+    
+		<script src="https://utteranc.es/client.js"
+        repo="awslife/awslife.github.io-comments"
+        issue-term="[ENTER TERM HERE]"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+    </script>
+  </section>
+</article>
+
+      </div>
+
+      <div id="side" class="pr-1 bg-white">
+        <aside class="pr-3">
+          
+  
+    <div id="toc" class="Box Box--blue mb-3">
+      <b>CoreOS Cluster Install</b>
+      <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#kubernetes-cluster-구성-정보">Kubernetes Cluster 구성 정보</a></li>
+<li><a href="#kubernetes-설치-순서">Kubernetes 설치 순서</a>
+<ul>
+<li><a href="#kubernetes-components-간의-연결을-위한-인증서-생성">Kubernetes components 간의 연결을 위한 인증서 생성</a></li>
+<li><a href="#coreos-환경-설정">CoreOS 환경 설정</a></li>
+<li><a href="#master-설치-진행">Master 설치 진행</a></li>
+</ul></li>
+<li><a href="#관련-오류-조치-방법">관련 오류 조치 방법</a></li>
+<li><a href="#reference-urls">Reference urls</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+  
+
+  
+    
+    
+      <div>
+        
+
+        
+          <iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width="61" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>
+        
+
+        
+
+        
+
+      </div>
+    
+  
+
+        </aside>
+      </div>
+
+      <div id="footer" class="pt-2 pb-3 bg-white text-center">
+        
+
+  <span class="text-small text-gray">
+    &copy;Awslife 2019 &middot; 
+
+    Powered by the
+    <a href="https://github.com/qqhann/hugo-primer" class="link-gray-dark">Hugo-Primer</a> theme for
+    <a href="https://gohugo.io" class="link-gray-dark">Hugo</a>.
+  </span>
+
+
+      </div>
+    </div>
+
+
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script>
+  </body>
+</html>

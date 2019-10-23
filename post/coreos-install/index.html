@@ -95,9 +95,9 @@ if (!doNotTrack) {
 
     
     <div class="float-md-right">
-      <span title="Lastmod: 2019-10-22. Published at: 2019-10-22.">
+      <span title="Lastmod: 2019-10-23. Published at: 2019-10-22.">
         
-          Lastmod: 2019-10-22
+          Lastmod: 2019-10-23
         
       </span>
     </div>
@@ -263,7 +263,7 @@ core@localhost ~ $</code></pre></div>
 Connection to <span class="m">192</span>.168.11.118 closed by remote host.
 Connection to <span class="m">192</span>.168.11.118 closed.</code></pre></div>
 <h3 id="설치-확인을-위한-접속-테스트">설치 확인을 위한 접속 테스트</h3>
-<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">   ~  ssh core@k8s-master1.homelab.local
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ ssh core@k8s-master1.homelab.local
 The authenticity of host <span class="s1">&#39;k8s-master1.homelab.local (192.168.11.230)&#39;</span> can<span class="s1">&#39;t be established.
 </span><span class="s1">ECDSA key fingerprint is SHA256:R4xTuHob3Yyw2zDlMKNgzyiV4hbOyKJ4YKIcHme3Ew8.
 </span><span class="s1">Are you sure you want to continue connecting (yes/no)? yes
@@ -271,7 +271,7 @@ The authenticity of host <span class="s1">&#39;k8s-master1.homelab.local (192.16
 Password:
 Container Linux by CoreOS stable <span class="o">(</span><span class="m">2191</span>.5.0<span class="o">)</span></code></pre></div>
 <h3 id="원격-관리를-위한-ssh-key-pairing">원격 관리를 위한 SSH Key pairing</h3>
-<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">  ~  ssh-copy-id -f core@k8s-master1.homelab.local
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ ssh-copy-id -f core@k8s-master1.homelab.local
 /usr/bin/ssh-copy-id: INFO: Source of key<span class="o">(</span>s<span class="o">)</span> to be installed: <span class="s2">&#34;/Users//.ssh/id_rsa.pub&#34;</span>
 Password:
 
@@ -280,14 +280,14 @@ Number of key<span class="o">(</span>s<span class="o">)</span> added:        <sp
 Now try logging into the machine, with:   <span class="s2">&#34;ssh &#39;core@k8s-master1.homelab.local&#39;&#34;</span>
 and check to make sure that only the key<span class="o">(</span>s<span class="o">)</span> you wanted were added.
 
-   ~ </code></pre></div>
+awslife@k8sdev:~$</code></pre></div>
 <h2 id="cloud-config가-잘못-설정되었을-경우-조치방법">cloud-config가 잘못 설정되었을 경우 조치방법</h2>
 
 <p><del>CoreOS 설치를 위한 cloud-config에 설정이 빠졌을 경우 CoreOS 재 설치를 고려해봐야하는 난감한 상황이 발생한다. 이때 재설치가 아닌 /var/lib/coreos-install/user_data만 수정 후 재 부팅하면 이런 문제를 해결 할 수 있다.</del></p>
 
 <p>위의 방법은 파일을 직접 수정하는 방법이며, 파일을 직접 수정하게되면 간편하기도 하지만 Validation Check가 동시에 이루어지지 않는다. 더 간단한 방법은 아래의 명령을 이용하는 방법이다.</p>
-<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">  ~  coreos-cloudinit -from-file<span class="o">=</span>cloud-config
-  ~ </code></pre></div>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ coreos-cloudinit -from-file<span class="o">=</span>cloud-config
+awslife@k8sdev:~$</code></pre></div>
 <h2 id="reference-urls">Reference urls</h2>
 
 <ul>
