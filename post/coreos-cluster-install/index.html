@@ -103,9 +103,9 @@ if (!doNotTrack) {
 
     
     <div class="float-md-right">
-      <span title="Lastmod: 2019-10-23. Published at: 2019-10-23.">
+      <span title="Lastmod: 2019-10-24. Published at: 2019-10-23.">
         
-          Lastmod: 2019-10-23
+          Lastmod: 2019-10-24
         
       </span>
     </div>
@@ -285,7 +285,7 @@ awslife@k8sdev:~/Documents/kube-ssl$</code></pre></div>
 
 <p>CoreOS 버전이 올라감에 따라 친숙한 cloud-config에서 Ignition으로 변경되었다. 다행히 cloud-config에서 사용되던 yaml 파일을 coreos-ct를 통하여 Ignition으로 일괄 변경 가능하다. Mac에서는 brew를 통하여 설치 가능하다.</p>
 
-<h3 id="master-설치-진행">Master 설치 진행</h3>
+<h3 id="master1-환경-설정">Master1 환경 설정</h3>
 
 <p>Master Node 1번에 대해 설치를 진행해 보았다. k8s-master1에 대한 설정은 k8s-master1와 동일하며 2,3번의 경우 IP, Hostname, PEM만 다르고 나머지는 동일하다. 만들어진 Yaml 파일을 ct 명령을 사용하여 Ignition Format으로 변경하자. (ct 명령에 대한 사용법 및 설치 방법은 아래 Reference에 자세하게 정리되어 있다.)</p>
 <div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ cat k8s-master1.yml
@@ -526,8 +526,159 @@ systemd:
           contents: <span class="p">|</span>
             <span class="o">[</span>Service<span class="o">]</span>
             <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/etcdctl <span class="nb">set</span> /coreos.com/network/config <span class="s1">&#39;{ &#34;Network&#34;: &#34;10.1.0.0/16&#34; }&#39;</span>
-awslife@k8sdev:~$ ct --platform<span class="o">=</span>custom &lt; k8s-master1.yml &gt; k8s-master1.json
 awslife@k8sdev:~$</code></pre></div>
+<h3 id="환경-설정-변환-및-적용">환경 설정 변환 및 적용</h3>
+
+<p>Container Linux 최신 버전에서는 더 이상 Cloud-Config.yml 설정을 지원하지 않는다. 따라서 yaml을 Ignition으로 변경해야한다. 특별한 Warning 또는 Error가 발생하지 않는다면 정상적으로 변환 완료된것이다. 여기서는 모든 Container Linux를 PXE를 통하여 부팅함으로 모든 Ignition 설정 파일은 PXE 서버로 복사하도록 한다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ ct --platform<span class="o">=</span>custom &lt; k8s-master1.yml &gt; k8s-master1.json
+awslife@k8sdev:~$ ct --platform<span class="o">=</span>custom &lt; k8s-master1.yml &gt; k8s-master1.json
+awslife@k8sdev:~$ ct --platform<span class="o">=</span>custom &lt; k8s-master2.yml &gt; k8s-master2.json
+awslife@k8sdev:~$ ct --platform<span class="o">=</span>custom &lt; k8s-master3.yml &gt; k8s-master3.json
+awslife@k8sdev:~$ scp -r k8s-master?.json admin@syno.homelab.local:/volume1/homelab/pxe/coreos/config/
+admin@syno.homelab.local<span class="err">&#39;</span>s password:
+k8s-master1.json                                                                                                                                       <span class="m">100</span>%   10KB   <span class="m">2</span>.3MB/s   <span class="m">00</span>:00
+k8s-master2.json                                                                                                                                       <span class="m">100</span>%   10KB   <span class="m">4</span>.1MB/s   <span class="m">00</span>:00
+k8s-master3.json                                                                                                                                       <span class="m">100</span>%   10KB   <span class="m">3</span>.9MB/s   <span class="m">00</span>:00
+awslife@k8sdev:~$</code></pre></div>
+<h3 id="pxe-설정-확인">PXE 설정 확인</h3>
+
+<p>PXE 서버는 Synology NAS에 구축하였고, Synology에 접속 후 보여지는 파일 리스트는 아래와 같다. Master 서버는 총 3대로 공통적인 설정은 동일하지만 IP, Hostname 및 PEM은 각 Master 서버마다 달리해주어야 하므로, 아래와 같이 Mac Address를 이용하여 각각의 설정을 분리 구성하였다. 자세한 내용은 PXE 부팅 내용을 확인하기 바란다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">admin@syno:/volume1/homelab/pxe$ ls -alR .
+.:
+total <span class="m">184</span>
+drwxrwxrwx+  <span class="m">4</span> admin users   <span class="m">4096</span> Oct  <span class="m">5</span> <span class="m">14</span>:10 .
+drwxrwxrwx+ <span class="m">17</span> root  root    <span class="m">4096</span> Oct  <span class="m">6</span> <span class="m">11</span>:31 ..
+-rw-r--r--   <span class="m">1</span> admin users    <span class="m">102</span> Oct  <span class="m">4</span> <span class="m">21</span>:36 boot.msg
+drwxrwxrwx+  <span class="m">3</span> admin users   <span class="m">4096</span> Oct  <span class="m">6</span> <span class="m">16</span>:44 coreos
+-rw-r--r--   <span class="m">1</span> admin users <span class="m">115812</span> Oct  <span class="m">3</span> <span class="m">21</span>:46 ldlinux.c32
+-rw-r--r--   <span class="m">1</span> admin users  <span class="m">41661</span> Oct  <span class="m">3</span> <span class="m">21</span>:37 pxelinux.0
+drwxr-xr-x   <span class="m">2</span> admin users   <span class="m">4096</span> Oct  <span class="m">6</span> <span class="m">13</span>:06 pxelinux.cfg
+
+./coreos:
+total <span class="m">464608</span>
+drwxrwxrwx+ <span class="m">3</span> admin users      <span class="m">4096</span> Oct  <span class="m">6</span> <span class="m">16</span>:44 .
+drwxrwxrwx+ <span class="m">4</span> admin users      <span class="m">4096</span> Oct  <span class="m">5</span> <span class="m">14</span>:10 ..
+drwxr-xr-x  <span class="m">2</span> admin users      <span class="m">4096</span> Oct <span class="m">10</span> <span class="m">23</span>:04 config
+-rw-r--r--  <span class="m">1</span> admin users <span class="m">423189910</span> Sep  <span class="m">5</span> <span class="m">07</span>:13 coreos_production_pxe_image.cpio.gz
+-rw-r--r--  <span class="m">1</span> admin users  <span class="m">49496736</span> Sep  <span class="m">5</span> <span class="m">07</span>:13 coreos_production_pxe.vmlinuz
+-rw-r--r--  <span class="m">1</span> admin users   <span class="m">3032433</span> Oct  <span class="m">5</span> <span class="m">18</span>:31 vmware.cpio.gz
+
+./coreos/config:
+total <span class="m">48</span>
+drwxr-xr-x  <span class="m">2</span> admin users  <span class="m">4096</span> Oct <span class="m">10</span> <span class="m">23</span>:04 .
+drwxrwxrwx+ <span class="m">3</span> admin users  <span class="m">4096</span> Oct  <span class="m">6</span> <span class="m">16</span>:44 ..
+-rw-r--r--  <span class="m">1</span> admin users  <span class="m">1520</span> Oct  <span class="m">5</span> <span class="m">20</span>:28 default.json
+-rw-r--r--  <span class="m">1</span> admin users <span class="m">10424</span> Oct <span class="m">24</span> <span class="m">22</span>:33 k8s-master1.json
+-rw-r--r--  <span class="m">1</span> admin users <span class="m">10382</span> Oct <span class="m">24</span> <span class="m">22</span>:33 k8s-master2.json
+-rw-r--r--  <span class="m">1</span> admin users <span class="m">10414</span> Oct <span class="m">24</span> <span class="m">22</span>:33 k8s-master3.json
+
+./pxelinux.cfg:
+total <span class="m">24</span>
+drwxr-xr-x  <span class="m">2</span> admin users <span class="m">4096</span> Oct  <span class="m">6</span> <span class="m">13</span>:06 .
+drwxrwxrwx+ <span class="m">4</span> admin users <span class="m">4096</span> Oct  <span class="m">5</span> <span class="m">14</span>:10 ..
+-rw-r--r--  <span class="m">1</span> admin users  <span class="m">308</span> Oct  <span class="m">5</span> <span class="m">20</span>:25 <span class="m">01</span>-00-0c-29-07-95-e1
+-rw-r--r--  <span class="m">1</span> admin users  <span class="m">308</span> Oct  <span class="m">6</span> <span class="m">11</span>:36 <span class="m">01</span>-00-0c-29-16-3c-42
+-rw-r--r--  <span class="m">1</span> admin users  <span class="m">308</span> Oct  <span class="m">5</span> <span class="m">20</span>:35 <span class="m">01</span>-00-0c-29-36-bd-2d
+-rw-r--r--  <span class="m">1</span> admin users  <span class="m">305</span> Oct  <span class="m">5</span> <span class="m">20</span>:25 default
+admin@syno:/volume1/homelab/pxe$</code></pre></div>
+<h3 id="서비스-확인">서비스 확인</h3>
+
+<p>Master 서버 3대에 접속 후 개별로 설정을 확인해도 되지만, 대단히 번거로운 작업이므로 pssh를 사용하여 한번에 구성을 확인하도록 하자. etcd-member 체크시 특별한 오류가 발견되지 않으면 Master 서버 3대가 정상적으로 동작중임을 확인 가능하다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~$ pssh -h hosts -i <span class="s2">&#34;hostname&#34;</span>
+<span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="m">22</span>:25:37 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master3.homelab.local
+k8s-master3.homelab.local
+<span class="o">[</span><span class="m">2</span><span class="o">]</span> <span class="m">22</span>:25:37 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master1.homelab.local
+k8s-master1.homelab.local
+<span class="o">[</span><span class="m">3</span><span class="o">]</span> <span class="m">22</span>:25:37 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master2.homelab.local
+k8s-master2.homelab.local
+awslife@k8sdev:~$ pssh -h hosts -i <span class="s2">&#34;date&#34;</span>
+<span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="m">22</span>:25:43 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master1.homelab.local
+Thu Oct <span class="m">24</span> <span class="m">13</span>:25:43 UTC <span class="m">2019</span>
+<span class="o">[</span><span class="m">2</span><span class="o">]</span> <span class="m">22</span>:25:43 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master3.homelab.local
+Thu Oct <span class="m">24</span> <span class="m">13</span>:25:43 UTC <span class="m">2019</span>
+<span class="o">[</span><span class="m">3</span><span class="o">]</span> <span class="m">22</span>:25:43 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master2.homelab.local
+Thu Oct <span class="m">24</span> <span class="m">13</span>:25:43 UTC <span class="m">2019</span>
+awslife@k8sdev:~$ pssh -h hosts -i <span class="s2">&#34;systemctl status etcd-member&#34;</span>
+<span class="o">[</span><span class="m">1</span><span class="o">]</span> <span class="m">22</span>:30:22 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master3.homelab.local
+● etcd-member.service - etcd <span class="o">(</span>System Application Container<span class="o">)</span>
+   Loaded: loaded <span class="o">(</span>/usr/lib/systemd/system/etcd-member.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: enabled<span class="o">)</span>
+  Drop-In: /etc/systemd/system/etcd-member.service.d
+           └─20-clct-etcd-member.conf, ssl-etcd-member.conf
+   Active: active <span class="o">(</span>running<span class="o">)</span> since Thu <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51 UTC<span class="p">;</span> 30s ago
+     Docs: https://github.com/coreos/etcd
+  Process: <span class="m">1065</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/mkdir --parents /var/lib/coreos <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">0</span>/SUCCESS<span class="o">)</span>
+  Process: <span class="m">1067</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/rkt rm --uuid-file<span class="o">=</span>/var/lib/coreos/etcd-member-wrapper.uuid <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">254</span><span class="o">)</span>
+ Main PID: <span class="m">1075</span> <span class="o">(</span>etcd<span class="o">)</span>
+    Tasks: <span class="m">8</span> <span class="o">(</span>limit: <span class="m">12355</span><span class="o">)</span>
+   Memory: <span class="m">207</span>.1M
+   CGroup: /system.slice/etcd-member.service
+           └─1075 /usr/local/bin/etcd --name<span class="o">=</span>k8s-master3 --data-dir<span class="o">=</span>/var/lib/etcd --listen-peer-urls<span class="o">=</span>https://192.168.11.232:2380 --listen-client-urls<span class="o">=</span>https://192.168.11.232:2379 --initial-advertise-peer-urls<span class="o">=</span>https://192.168.11.232:2380 --initial-cluster<span class="o">=</span>k8s-master1<span class="o">=</span>https://192.168.11.230:2380,k8s-master2<span class="o">=</span>https://192.168.11.231:2380,k8s-master3<span class="o">=</span>https://192.168.11.232:2380 --initial-cluster-state<span class="o">=</span>new --initial-cluster-token<span class="o">=</span>etcd-cluster-homelab-local --advertise-client-urls<span class="o">=</span>https://k8s-master3.homelab.local:2379,https://192.168.11.232:2379 --auto-compaction-retention<span class="o">=</span><span class="m">1</span> --cert-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master3.pem --key-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master3_key.pem --client-cert-auth<span class="o">=</span><span class="nb">true</span> --trusted-ca-file<span class="o">=</span>/var/lib/etcd/ssl/ca.pem --peer-cert-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master3.pem --peer-key-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master3_key.pem --peer-client-cert-auth<span class="o">=</span><span class="nb">true</span> --peer-trusted-ca-file<span class="o">=</span>/var/lib/etcd/ssl/ca.pem
+
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.407881 I <span class="p">|</span> etcdserver: published <span class="o">{</span>Name:k8s-master3 ClientURLs:<span class="o">[</span>https://192.168.11.232:2379 https://k8s-master3.homelab.local:2379<span class="o">]}</span> to cluster f2f4591a3f4c70b8
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.408024 I <span class="p">|</span> embed: ready to serve client requests
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.409236 I <span class="p">|</span> embed: serving client requests on <span class="m">192</span>.168.11.232:2379
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.419300 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer 199851813e5d4b5c <span class="o">(</span>stream MsgApp v2 reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local systemd<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Started etcd <span class="o">(</span>System Application Container<span class="o">)</span>.
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.442183 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer 199851813e5d4b5c <span class="o">(</span>stream Message reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.442251 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer 6923fbe974c6627d <span class="o">(</span>stream MsgApp v2 reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.453271 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer 6923fbe974c6627d <span class="o">(</span>stream Message reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.040913 N <span class="p">|</span> etcdserver/membership: updated the cluster version from <span class="m">3</span>.0 to <span class="m">3</span>.2
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master3.homelab.local etcd-wrapper<span class="o">[</span><span class="m">1075</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.040989 I <span class="p">|</span> etcdserver/api: enabled capabilities <span class="k">for</span> version <span class="m">3</span>.2
+<span class="o">[</span><span class="m">2</span><span class="o">]</span> <span class="m">22</span>:30:22 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master1.homelab.local
+● etcd-member.service - etcd <span class="o">(</span>System Application Container<span class="o">)</span>
+   Loaded: loaded <span class="o">(</span>/usr/lib/systemd/system/etcd-member.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: enabled<span class="o">)</span>
+  Drop-In: /etc/systemd/system/etcd-member.service.d
+           └─20-clct-etcd-member.conf, ssl-etcd-member.conf
+   Active: active <span class="o">(</span>running<span class="o">)</span> since Thu <span class="m">2019</span>-10-24 <span class="m">13</span>:25:35 UTC<span class="p">;</span> 4min 46s ago
+     Docs: https://github.com/coreos/etcd
+  Process: <span class="m">777</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/mkdir --parents /var/lib/coreos <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">0</span>/SUCCESS<span class="o">)</span>
+  Process: <span class="m">784</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/rkt rm --uuid-file<span class="o">=</span>/var/lib/coreos/etcd-member-wrapper.uuid <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">254</span><span class="o">)</span>
+ Main PID: <span class="m">857</span> <span class="o">(</span>etcd<span class="o">)</span>
+    Tasks: <span class="m">8</span> <span class="o">(</span>limit: <span class="m">12342</span><span class="o">)</span>
+   Memory: <span class="m">310</span>.6M
+   CGroup: /system.slice/etcd-member.service
+           └─857 /usr/local/bin/etcd --name<span class="o">=</span>k8s-master1 --data-dir<span class="o">=</span>/var/lib/etcd --listen-peer-urls<span class="o">=</span>https://192.168.11.230:2380 --listen-client-urls<span class="o">=</span>https://192.168.11.230:2379 --initial-advertise-peer-urls<span class="o">=</span>https://192.168.11.230:2380 --initial-cluster<span class="o">=</span>k8s-master1<span class="o">=</span>https://192.168.11.230:2380,k8s-master2<span class="o">=</span>https://192.168.11.231:2380,k8s-master3<span class="o">=</span>https://192.168.11.232:2380 --initial-cluster-state<span class="o">=</span>new --initial-cluster-token<span class="o">=</span>etcd-cluster-homelab-local --advertise-client-urls<span class="o">=</span>https://k8s-master1.homelab.local:2379,https://192.168.11.230:2379 --auto-compaction-retention<span class="o">=</span><span class="m">1</span> --cert-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master1.pem --key-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master1_key.pem --client-cert-auth<span class="o">=</span><span class="nb">true</span> --trusted-ca-file<span class="o">=</span>/var/lib/etcd/ssl/ca.pem --peer-cert-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master1.pem --peer-key-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master1_key.pem --peer-client-cert-auth<span class="o">=</span><span class="nb">true</span> --peer-trusted-ca-file<span class="o">=</span>/var/lib/etcd/ssl/ca.pem
+
+Oct <span class="m">24</span> <span class="m">13</span>:29:39 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:39.526945 W <span class="p">|</span> rafthttp: health check <span class="k">for</span> peer d4b0c50c6ff0ff6e could not connect: dial tcp <span class="m">192</span>.168.11.232:2380: getsockopt: connection refused
+Oct <span class="m">24</span> <span class="m">13</span>:29:44 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:44.527104 W <span class="p">|</span> rafthttp: health check <span class="k">for</span> peer d4b0c50c6ff0ff6e could not connect: dial tcp <span class="m">192</span>.168.11.232:2380: getsockopt: connection refused
+Oct <span class="m">24</span> <span class="m">13</span>:29:49 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:49.527286 W <span class="p">|</span> rafthttp: health check <span class="k">for</span> peer d4b0c50c6ff0ff6e could not connect: dial tcp <span class="m">192</span>.168.11.232:2380: getsockopt: connection refused
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.406905 I <span class="p">|</span> rafthttp: peer d4b0c50c6ff0ff6e became active
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.407610 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream MsgApp v2 reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.412702 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream Message reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.452871 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream MsgApp v2 writer<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.474231 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream Message writer<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.062167 N <span class="p">|</span> etcdserver/membership: updated the cluster version from <span class="m">3</span>.0 to <span class="m">3</span>.2
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master1.homelab.local etcd-wrapper<span class="o">[</span><span class="m">857</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.062543 I <span class="p">|</span> etcdserver/api: enabled capabilities <span class="k">for</span> version <span class="m">3</span>.2
+<span class="o">[</span><span class="m">3</span><span class="o">]</span> <span class="m">22</span>:30:22 <span class="o">[</span>SUCCESS<span class="o">]</span> core@k8s-master2.homelab.local
+● etcd-member.service - etcd <span class="o">(</span>System Application Container<span class="o">)</span>
+   Loaded: loaded <span class="o">(</span>/usr/lib/systemd/system/etcd-member.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: enabled<span class="o">)</span>
+  Drop-In: /etc/systemd/system/etcd-member.service.d
+           └─20-clct-etcd-member.conf, ssl-etcd-member.conf
+   Active: active <span class="o">(</span>running<span class="o">)</span> since Thu <span class="m">2019</span>-10-24 <span class="m">13</span>:25:35 UTC<span class="p">;</span> 4min 46s ago
+     Docs: https://github.com/coreos/etcd
+  Process: <span class="m">793</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/mkdir --parents /var/lib/coreos <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">0</span>/SUCCESS<span class="o">)</span>
+  Process: <span class="m">795</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/rkt rm --uuid-file<span class="o">=</span>/var/lib/coreos/etcd-member-wrapper.uuid <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">254</span><span class="o">)</span>
+ Main PID: <span class="m">853</span> <span class="o">(</span>etcd<span class="o">)</span>
+    Tasks: <span class="m">9</span> <span class="o">(</span>limit: <span class="m">12342</span><span class="o">)</span>
+   Memory: <span class="m">287</span>.5M
+   CGroup: /system.slice/etcd-member.service
+           └─853 /usr/local/bin/etcd --name<span class="o">=</span>k8s-master2 --data-dir<span class="o">=</span>/var/lib/etcd --listen-peer-urls<span class="o">=</span>https://192.168.11.231:2380 --listen-client-urls<span class="o">=</span>https://192.168.11.231:2379 --initial-advertise-peer-urls<span class="o">=</span>https://192.168.11.231:2380 --initial-cluster<span class="o">=</span>k8s-master1<span class="o">=</span>https://192.168.11.230:2380,k8s-master2<span class="o">=</span>https://192.168.11.231:2380,k8s-master3<span class="o">=</span>https://192.168.11.232:2380 --initial-cluster-state<span class="o">=</span>new --initial-cluster-token<span class="o">=</span>etcd-cluster-homelab-local --advertise-client-urls<span class="o">=</span>https://k8s-master2.homelab.local:2379,https://192.168.11.231:2379 --auto-compaction-retention<span class="o">=</span><span class="m">1</span> --cert-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master2.pem --key-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master2_key.pem --client-cert-auth<span class="o">=</span><span class="nb">true</span> --trusted-ca-file<span class="o">=</span>/var/lib/etcd/ssl/ca.pem --peer-cert-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master2.pem --peer-key-file<span class="o">=</span>/var/lib/etcd/ssl/k8s-master2_key.pem --peer-client-cert-auth<span class="o">=</span><span class="nb">true</span> --peer-trusted-ca-file<span class="o">=</span>/var/lib/etcd/ssl/ca.pem
+
+Oct <span class="m">24</span> <span class="m">13</span>:29:48 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:48.026834 W <span class="p">|</span> etcdserver: cannot get the version of member d4b0c50c6ff0ff6e <span class="o">(</span>Get https://192.168.11.232:2380/version: dial tcp <span class="m">192</span>.168.11.232:2380: getsockopt: connection refused<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.169142 W <span class="p">|</span> rafthttp: health check <span class="k">for</span> peer d4b0c50c6ff0ff6e could not connect: dial tcp <span class="m">192</span>.168.11.232:2380: getsockopt: connection refused
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.390379 I <span class="p">|</span> rafthttp: peer d4b0c50c6ff0ff6e became active
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.390636 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream Message reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.390794 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream MsgApp v2 reader<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.407318 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream MsgApp v2 writer<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:51 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:51.430771 I <span class="p">|</span> rafthttp: established a TCP streaming connection with peer d4b0c50c6ff0ff6e <span class="o">(</span>stream Message writer<span class="o">)</span>
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.038722 I <span class="p">|</span> etcdserver: updating the cluster version from <span class="m">3</span>.0 to <span class="m">3</span>.2
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.039616 N <span class="p">|</span> etcdserver/membership: updated the cluster version from <span class="m">3</span>.0 to <span class="m">3</span>.2
+Oct <span class="m">24</span> <span class="m">13</span>:29:52 k8s-master2.homelab.local etcd-wrapper<span class="o">[</span><span class="m">853</span><span class="o">]</span>: <span class="m">2019</span>-10-24 <span class="m">13</span>:29:52.039697 I <span class="p">|</span> etcdserver/api: enabled capabilities <span class="k">for</span> version <span class="m">3</span>.2
+awslife@k8sdev:~$</code></pre></div>
+<h2 id="정리">정리</h2>
+
+<p>Container Linux의 사용 목적은 적은 리소스 사용과 관리의 단순함을 꼽을수 있다. 이번 내용에서는 Master Cluster 구성을 정리해 보았다. 다음에는 Master 서비스를 올려보자.</p>
+
 <h2 id="관련-오류-조치-방법">관련 오류 조치 방법</h2>
 
 <ul>
@@ -587,8 +738,12 @@ awslife@k8sdev:~/Documents/kube-ssl$</code></pre></div></li>
 <ul>
 <li><a href="#kubernetes-components-간의-연결을-위한-인증서-생성">Kubernetes components 간의 연결을 위한 인증서 생성</a></li>
 <li><a href="#coreos-환경-설정">CoreOS 환경 설정</a></li>
-<li><a href="#master-설치-진행">Master 설치 진행</a></li>
+<li><a href="#master1-환경-설정">Master1 환경 설정</a></li>
+<li><a href="#환경-설정-변환-및-적용">환경 설정 변환 및 적용</a></li>
+<li><a href="#pxe-설정-확인">PXE 설정 확인</a></li>
+<li><a href="#서비스-확인">서비스 확인</a></li>
 </ul></li>
+<li><a href="#정리">정리</a></li>
 <li><a href="#관련-오류-조치-방법">관련 오류 조치 방법</a></li>
 <li><a href="#reference-urls">Reference urls</a></li>
 </ul></li>
