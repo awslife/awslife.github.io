@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-150727828-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      
+  How to Reduce Pandas Memory Usage &ndash; Awslife&#39;s blog
+
+    </title>
+    
+    
+    <meta name="description" property="og:description" content="pandas에서 1GB 이상의 데이터를 불러와서 연산을 하게되면 OOM을 자주 겪게된다. 한정적인 메모리를 좀 더 효율적으로 사용하기 위하여 pandas에서 메모|Describe what your web page is about">
+    
+
+    <meta name="apple-mobile-web-app-title" content="Awslife&#39;s blog">
+    
+    
+    <link rel="icon" href="/favicon-64.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="mask-icon" size="any" href="/pinned-icon.svg">
+    
+    
+    
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@">
+    <meta name="twitter:creator" content="@">
+    <meta name="twitter:title" content="How to Reduce Pandas Memory Usage | Awslife&#39;s blog">
+    <meta name="twitter:description" content="pandas에서 1GB 이상의 데이터를 불러와서 연산을 하게되면 OOM을 자주 겪게된다. 한정적인 메모리를 좀 더 효율적으로 사용하기 위하여 pandas에서 메모|Describe what your web page is about">
+    <meta name="twitter:image" content="http://awslife.github.io/twitter-card.png">
+    
+
+
+    <link rel="stylesheet" href="/assets/syntax.css">
+    <link rel="stylesheet" href="/assets/primer-build.css">
+    <link rel="stylesheet" href="/assets/style.css">
+  </head>
+
+
+  <body class="bg-gray">
+    <div id="holy" class="container-lg bg-white h-100">
+
+      <div id="header" class="px-1 bg-white">
+        <nav class="UnderlineNav UnderlineNav--right px-2">
+  <a class="UnderlineNav-actions muted-link h2" href="http://awslife.github.io/">
+    Awslife&#39;s blog
+  </a>
+
+  
+  
+</nav>
+
+      </div>
+
+      <div role="main" id="main" class="holy-main markdown-body px-4 bg-white">
+        
+
+<div class="Subhead">
+  <div class="Subhead-heading">
+    <div class="h1 mt-3 mb-1">How to Reduce Pandas Memory Usage</div>
+  </div>
+  <div class="Subhead-description">
+    
+
+
+<a href='/categories/python' class="muted-link">
+  <span class="Label Label--gray-darker">Python</span>
+</a>
+
+
+
+<a href='/tags/python' class="muted-link">
+  <span class="Label Label--gray">Python</span>
+</a>
+
+<a href='/tags/pandas' class="muted-link">
+  <span class="Label Label--gray">Pandas</span>
+</a>
+
+
+
+    
+    <div class="float-md-right">
+      <span title="Lastmod: 2019-10-24. Published at: 2019-10-24.">
+        
+          Lastmod: 2019-10-24
+        
+      </span>
+    </div>
+    
+  </div>
+</div>
+<article>
+  
+  <section class="pb-6 mb-3 border-bottom">
+    
+
+<p>pandas에서 1GB 이상의 데이터를 불러와서 연산을 하게되면 OOM을 자주 겪게된다. 한정적인 메모리를 좀 더 효율적으로 사용하기 위하여 pandas에서 메모리를 효율적으로 사용할 수 있는 방법을 테스트 해본 기록을 남겨보고자 한다.</p>
+
+<h2 id="테스트-환경-설정">테스트 환경 설정</h2>
+
+<p>현재 설치된 파이썬 버전을 확인 한 후 virtualenv를 이용하여 테스트를 위한 새로운 환경을 생성한다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="n">awslife</span><span class="nd">@k8sdev</span><span class="p">:</span><span class="o">~/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="err">$</span> <span class="n">virtualenv</span> <span class="o">-</span><span class="n">p</span> <span class="n">python3</span> <span class="n">venv36</span>
+<span class="n">Already</span> <span class="n">using</span> <span class="n">interpreter</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python3</span>
+<span class="n">Using</span> <span class="n">base</span> <span class="n">prefix</span> <span class="s1">&#39;/usr&#39;</span>
+<span class="n">New</span> <span class="n">python</span> <span class="n">executable</span> <span class="ow">in</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">awslife</span><span class="o">/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="o">/</span><span class="n">venv36</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python3</span>
+<span class="n">Also</span> <span class="n">creating</span> <span class="n">executable</span> <span class="ow">in</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">awslife</span><span class="o">/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="o">/</span><span class="n">venv36</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python</span>
+<span class="n">Installing</span> <span class="n">setuptools</span><span class="p">,</span> <span class="n">pkg_resources</span><span class="p">,</span> <span class="n">pip</span><span class="p">,</span> <span class="n">wheel</span><span class="o">...</span><span class="n">done</span><span class="o">.</span>
+<span class="n">awslife</span><span class="nd">@k8sdev</span><span class="p">:</span><span class="o">~/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="err">$</span> <span class="n">ls</span> <span class="o">-</span><span class="n">tlr</span>
+<span class="n">total</span> <span class="mi">4</span>
+<span class="n">drwxrwxr</span><span class="o">-</span><span class="n">x</span> <span class="mi">6</span> <span class="n">awslife</span> <span class="n">awslife</span> <span class="mi">4096</span> <span class="mi">10</span><span class="err">월</span> <span class="mi">24</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span> <span class="n">venv36</span>
+<span class="n">awslife</span><span class="nd">@k8sdev</span><span class="p">:</span><span class="o">~/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="err">$</span> <span class="n">source</span> <span class="n">venv36</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+<span class="p">(</span><span class="n">venv36</span><span class="p">)</span> <span class="n">awslife</span><span class="nd">@k8sdev</span><span class="p">:</span><span class="o">~/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="err">$</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">numpy</span> <span class="n">pandas</span>
+<span class="n">Collecting</span> <span class="n">numpy</span>
+  <span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">files</span><span class="o">.</span><span class="n">pythonhosted</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">packages</span><span class="o">/</span><span class="mi">0</span><span class="n">e</span><span class="o">/</span><span class="mi">46</span><span class="o">/</span><span class="n">ae6773894f7eacf53308086287897ec568eac9768918d913d5b9d366c5db</span><span class="o">/</span><span class="n">numpy</span><span class="o">-</span><span class="mf">1.17</span><span class="o">.</span><span class="mi">3</span><span class="o">-</span><span class="n">cp36</span><span class="o">-</span><span class="n">cp36m</span><span class="o">-</span><span class="n">manylinux1_x86_64</span><span class="o">.</span><span class="n">whl</span> <span class="p">(</span><span class="mf">20.0</span><span class="n">MB</span><span class="p">)</span>
+     <span class="o">|</span><span class="err">████████████████████████████████</span><span class="o">|</span> <span class="mf">20.0</span><span class="n">MB</span> <span class="mf">40.3</span><span class="n">MB</span><span class="o">/</span><span class="n">s</span>
+<span class="n">Collecting</span> <span class="n">pandas</span>
+  <span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">files</span><span class="o">.</span><span class="n">pythonhosted</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">packages</span><span class="o">/</span><span class="mi">86</span><span class="o">/</span><span class="mi">12</span><span class="o">/</span><span class="mi">08</span><span class="n">b092f6fc9e4c2552e37add0861d0e0e0d743f78f1318973caad970b3fc</span><span class="o">/</span><span class="n">pandas</span><span class="o">-</span><span class="mf">0.25</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">cp36</span><span class="o">-</span><span class="n">cp36m</span><span class="o">-</span><span class="n">manylinux1_x86_64</span><span class="o">.</span><span class="n">whl</span> <span class="p">(</span><span class="mf">10.4</span><span class="n">MB</span><span class="p">)</span>
+     <span class="o">|</span><span class="err">████████████████████████████████</span><span class="o">|</span> <span class="mf">10.4</span><span class="n">MB</span> <span class="mf">18.2</span><span class="n">MB</span><span class="o">/</span><span class="n">s</span>
+<span class="n">Collecting</span> <span class="n">pytz</span><span class="o">&gt;=</span><span class="mf">2017.2</span>
+  <span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">files</span><span class="o">.</span><span class="n">pythonhosted</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">packages</span><span class="o">/</span><span class="n">e7</span><span class="o">/</span><span class="n">f9</span><span class="o">/</span><span class="n">f0b53f88060247251bf481fa6ea62cd0d25bf1b11a87888e53ce5b7c8ad2</span><span class="o">/</span><span class="n">pytz</span><span class="o">-</span><span class="mf">2019.3</span><span class="o">-</span><span class="n">py2</span><span class="o">.</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span> <span class="p">(</span><span class="mi">509</span><span class="n">kB</span><span class="p">)</span>
+     <span class="o">|</span><span class="err">████████████████████████████████</span><span class="o">|</span> <span class="mi">512</span><span class="n">kB</span> <span class="mf">21.1</span><span class="n">MB</span><span class="o">/</span><span class="n">s</span>
+<span class="n">Collecting</span> <span class="n">python</span><span class="o">-</span><span class="n">dateutil</span><span class="o">&gt;=</span><span class="mf">2.6</span><span class="o">.</span><span class="mi">1</span>
+  <span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">files</span><span class="o">.</span><span class="n">pythonhosted</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">packages</span><span class="o">/</span><span class="mi">41</span><span class="o">/</span><span class="mi">17</span><span class="o">/</span><span class="n">c62faccbfbd163c7f57f3844689e3a78bae1f403648a6afb1d0866d87fbb</span><span class="o">/</span><span class="n">python_dateutil</span><span class="o">-</span><span class="mf">2.8</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">py2</span><span class="o">.</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span> <span class="p">(</span><span class="mi">226</span><span class="n">kB</span><span class="p">)</span>
+     <span class="o">|</span><span class="err">████████████████████████████████</span><span class="o">|</span> <span class="mi">235</span><span class="n">kB</span> <span class="mf">34.7</span><span class="n">MB</span><span class="o">/</span><span class="n">s</span>
+<span class="n">Collecting</span> <span class="n">six</span><span class="o">&gt;=</span><span class="mf">1.5</span>
+  <span class="n">Downloading</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">files</span><span class="o">.</span><span class="n">pythonhosted</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">packages</span><span class="o">/</span><span class="mi">73</span><span class="o">/</span><span class="n">fb</span><span class="o">/</span><span class="mo">00</span><span class="n">a976f728d0d1fecfe898238ce23f502a721c0ac0ecfedb80e0d88c64e9</span><span class="o">/</span><span class="n">six</span><span class="o">-</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">py2</span><span class="o">.</span><span class="n">py3</span><span class="o">-</span><span class="n">none</span><span class="o">-</span><span class="nb">any</span><span class="o">.</span><span class="n">whl</span>
+<span class="n">Installing</span> <span class="n">collected</span> <span class="n">packages</span><span class="p">:</span> <span class="n">numpy</span><span class="p">,</span> <span class="n">pytz</span><span class="p">,</span> <span class="n">six</span><span class="p">,</span> <span class="n">python</span><span class="o">-</span><span class="n">dateutil</span><span class="p">,</span> <span class="n">pandas</span>
+<span class="n">Successfully</span> <span class="n">installed</span> <span class="n">numpy</span><span class="o">-</span><span class="mf">1.17</span><span class="o">.</span><span class="mi">3</span> <span class="n">pandas</span><span class="o">-</span><span class="mf">0.25</span><span class="o">.</span><span class="mi">2</span> <span class="n">python</span><span class="o">-</span><span class="n">dateutil</span><span class="o">-</span><span class="mf">2.8</span><span class="o">.</span><span class="mi">0</span> <span class="n">pytz</span><span class="o">-</span><span class="mf">2019.3</span> <span class="n">six</span><span class="o">-</span><span class="mf">1.12</span><span class="o">.</span><span class="mi">0</span>
+<span class="p">(</span><span class="n">venv36</span><span class="p">)</span> <span class="n">awslife</span><span class="nd">@k8sdev</span><span class="p">:</span><span class="o">~/</span><span class="n">Documents</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">test</span><span class="err">$</span></code></pre></div>
+<h2 id="pandas를-이용한-테스트-데이터-생성-및-메모리-체크">Pandas를 이용한 테스트 데이터 생성 및 메모리 체크</h2>
+
+<p>sample script를 사용하여 100,000 * 256 데이터를 생성한다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100000</span><span class="p">,</span><span class="mi">256</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;</span>
+<span class="n">RangeIndex</span><span class="p">:</span> <span class="mi">100000</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">99999</span>
+<span class="n">Columns</span><span class="p">:</span> <span class="mi">256</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">255</span>
+<span class="n">dtypes</span><span class="p">:</span> <span class="n">float64</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span>
+<span class="n">memory</span> <span class="n">usage</span><span class="p">:</span> <span class="mf">195.3</span> <span class="n">MB</span>
+<span class="o">&gt;&gt;&gt;</span></code></pre></div>
+<p>DataFrame을 확인해보면 256개의 컬럼을 가지고 있으며 Data Type은 256개의 float64로 구성되어 있다. 그리고 195.3MB의 메모리를 사용하는것을 알 수 있다. 생각보다 과도하게 메모리를 점유하고 있는것을 확인할 수 있는데 이는 pandas에서 기본적으로 데이터를 로딩할때 데이터 타입을 최대한 크게 잡도록 설정되어 있기 때문이다.</p>
+
+<h2 id="메모리-사이즈를-줄이기-위한-컬럼-타입-변경">메모리 사이즈를 줄이기 위한 컬럼 타입 변경</h2>
+
+<p>메모리 사용을 줄이기 위해 float64로 구성되어 있는 모든 컬럼을 float32로 변경해보자.</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">256</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">df</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span></code></pre></div>
+<p>위 코드를 실행해도 되지만 시간이 엄청 오래걸린다. 30초 수행 후 Break를 건 후 메모리를 체크해보면 195.3MB에서 97.7MB로 줄어 있음을 확인해 볼 수 있다. 데이터 Row가 많으면 더 크게 줄어 들수 있음을 알수 있다. 그리고 만약 Data Schema을 알고 있고 자주 사용하는 데이터라면 데이터 로딩시 컬럼 데이터 타입을 세부적으로 조정하여 최적화가 가능하다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;</span>
+<span class="n">RangeIndex</span><span class="p">:</span> <span class="mi">100000</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">99999</span>
+<span class="n">Columns</span><span class="p">:</span> <span class="mi">256</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">255</span>
+<span class="n">dtypes</span><span class="p">:</span> <span class="n">float32</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span>
+<span class="n">memory</span> <span class="n">usage</span><span class="p">:</span> <span class="mf">97.7</span> <span class="n">MB</span>
+<span class="o">&gt;&gt;&gt;</span></code></pre></div>
+<h2 id="메모리-사이즈를-빠르게-줄이기-위한-데이터-저장-및-다시-로드">메모리 사이즈를 빠르게 줄이기 위한 데이터 저장 및 다시 로드</h2>
+
+<p>아래는 메모리 사이즈를 줄이기 위하여 DataFrame을 압축된 csv 파일로 저장 후 컬럼의 Data Type을 명시적으로 지정하여 데이터를 로딩하는 방법이다. 컬럼 타입을 명시적으로 지정했을때와 그렇지 않을때를 비교해보면 메모리가 확연히 줄어들어 있음을 확인해 볼 수 있다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s2">&#34;test.csv.gz&#34;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s2">&#34;gzip&#34;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">del</span> <span class="n">df</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">256</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+<span class="o">...</span>     <span class="n">d</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&#34;test.csv.gz&#34;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s2">&#34;gzip&#34;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;</span>
+<span class="n">RangeIndex</span><span class="p">:</span> <span class="mi">100000</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">99999</span>
+<span class="n">Columns</span><span class="p">:</span> <span class="mi">257</span> <span class="n">entries</span><span class="p">,</span> <span class="n">Unnamed</span><span class="p">:</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">255</span>
+<span class="n">dtypes</span><span class="p">:</span> <span class="n">float32</span><span class="p">(</span><span class="mi">257</span><span class="p">)</span>
+<span class="n">memory</span> <span class="n">usage</span><span class="p">:</span> <span class="mf">98.0</span> <span class="n">MB</span>
+<span class="o">&gt;&gt;&gt;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&#34;test.csv.gz&#34;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s2">&#34;gzip&#34;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+<span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;</span>
+<span class="n">RangeIndex</span><span class="p">:</span> <span class="mi">100000</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">99999</span>
+<span class="n">Columns</span><span class="p">:</span> <span class="mi">257</span> <span class="n">entries</span><span class="p">,</span> <span class="n">Unnamed</span><span class="p">:</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">255</span>
+<span class="n">dtypes</span><span class="p">:</span> <span class="n">float64</span><span class="p">(</span><span class="mi">256</span><span class="p">),</span> <span class="n">int64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">memory</span> <span class="n">usage</span><span class="p">:</span> <span class="mf">196.1</span> <span class="n">MB</span>
+<span class="o">&gt;&gt;&gt;</span></code></pre></div>
+<h2 id="결론">결론</h2>
+
+<p>pandas에서 데이터 로드시 데이터 사이즈를 최대한 크게 잡고 로딩을 시작한다. 데이터가 작을때는 크게 상관이 없지만 대용량 데이터를 처리해야 한다면 이는 상당히 문제가 될 수 있다. 만약 분석해야 하는 데이터를 정확히 파악하고 있다면 데이터 로드시 specific한 컬럼 데이터 타입을 지정하면 메모리 사이즈를 대폭 줄일 수 있다.</p>
+
+  </section>
+
+  <section>
+    
+      
+    
+		<script src="https://utteranc.es/client.js"
+        repo="awslife/awslife.github.io-comments"
+        issue-term="[ENTER TERM HERE]"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+    </script>
+  </section>
+</article>
+
+      </div>
+
+      <div id="side" class="pr-1 bg-white">
+        <aside class="pr-3">
+          
+  
+    <div id="toc" class="Box Box--blue mb-3">
+      <b>How to Reduce Pandas Memory Usage</b>
+      <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#테스트-환경-설정">테스트 환경 설정</a></li>
+<li><a href="#pandas를-이용한-테스트-데이터-생성-및-메모리-체크">Pandas를 이용한 테스트 데이터 생성 및 메모리 체크</a></li>
+<li><a href="#메모리-사이즈를-줄이기-위한-컬럼-타입-변경">메모리 사이즈를 줄이기 위한 컬럼 타입 변경</a></li>
+<li><a href="#메모리-사이즈를-빠르게-줄이기-위한-데이터-저장-및-다시-로드">메모리 사이즈를 빠르게 줄이기 위한 데이터 저장 및 다시 로드</a></li>
+<li><a href="#결론">결론</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+  
+
+  
+    
+    
+      <div>
+        
+
+        
+          <iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width="61" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>
+        
+
+        
+
+        
+
+      </div>
+    
+  
+
+        </aside>
+      </div>
+
+      <div id="footer" class="pt-2 pb-3 bg-white text-center">
+        
+
+  <span class="text-small text-gray">
+    &copy;Awslife 2019 &middot; 
+
+    Powered by the
+    <a href="https://github.com/qqhann/hugo-primer" class="link-gray-dark">Hugo-Primer</a> theme for
+    <a href="https://gohugo.io" class="link-gray-dark">Hugo</a>.
+  </span>
+
+
+      </div>
+    </div>
+
+
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script>
+  </body>
+</html>

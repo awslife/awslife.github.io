@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Python on Awslife&#39;s blog</title>
+    <link>http://awslife.github.io/categories/python/</link>
+    <description>Recent content in Python on Awslife&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ko-KR</language>
+    <copyright>&amp;copy;Awslife 2019</copyright>
+    <lastBuildDate>Thu, 24 Oct 2019 23:40:44 +0900</lastBuildDate>
+    
+	<atom:link href="http://awslife.github.io/categories/python/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>How to Reduce Pandas Memory Usage</title>
+      <link>http://awslife.github.io/post/how-to-reduce-pandas-memory-usage/</link>
+      <pubDate>Thu, 24 Oct 2019 23:40:44 +0900</pubDate>
+      
+      <guid>http://awslife.github.io/post/how-to-reduce-pandas-memory-usage/</guid>
+      <description>pandas에서 1GB 이상의 데이터를 불러와서 연산을 하게되면 OOM을 자주 겪게된다. 한정적인 메모리를 좀 더 효율적으로 사용하기 위하여 pandas에서 메모</description>
+    </item>
+    
+  </channel>
+</rss>
