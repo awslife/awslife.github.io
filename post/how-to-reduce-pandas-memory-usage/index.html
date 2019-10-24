@@ -159,11 +159,11 @@ if (!doNotTrack) {
 
 <h2 id="메모리-사이즈를-줄이기-위한-컬럼-타입-변경">메모리 사이즈를 줄이기 위한 컬럼 타입 변경</h2>
 
-<p>메모리 사용을 줄이기 위해 float64로 구성되어 있는 모든 컬럼을 float32로 변경해보자.</p>
+<p>메모리 사용을 줄이기 위해 float64로 구성되어 있는 모든 컬럼을 float32로 변경해보자. 실행 후 Data Frame의 메모리 사이즈를 확인해보면 195.3MB에서 97.7MB로 줄어 있음을 확인해 볼 수 있다. 그리고 만약 Data Schema을 알고 있고 자주 사용하는 데이터라면 데이터 로딩시 컬럼 데이터 타입을 세부적으로 조정하여 최적화가 가능하다.</p>
 <div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">256</span><span class="p">):</span>
-<span class="o">...</span>     <span class="n">df</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span></code></pre></div>
-<p>위 코드를 실행해도 되지만 시간이 엄청 오래걸린다. 30초 수행 후 Break를 건 후 메모리를 체크해보면 195.3MB에서 97.7MB로 줄어 있음을 확인해 볼 수 있다. 데이터 Row가 많으면 더 크게 줄어 들수 있음을 알수 있다. 그리고 만약 Data Schema을 알고 있고 자주 사용하는 데이터라면 데이터 로딩시 컬럼 데이터 타입을 세부적으로 조정하여 최적화가 가능하다.</p>
-<div class="highlight"><pre class="chroma"><code class="language-python" data-lang="python"><span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
+<span class="o">...</span>     <span class="n">df</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">df</span><span class="o">.</span><span class="n">info</span><span class="p">()</span>
 <span class="o">&lt;</span><span class="k">class</span> <span class="err">&#39;</span><span class="nc">pandas</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="s1">&#39;&gt;</span>
 <span class="n">RangeIndex</span><span class="p">:</span> <span class="mi">100000</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">99999</span>
 <span class="n">Columns</span><span class="p">:</span> <span class="mi">256</span> <span class="n">entries</span><span class="p">,</span> <span class="mi">0</span> <span class="n">to</span> <span class="mi">255</span>
