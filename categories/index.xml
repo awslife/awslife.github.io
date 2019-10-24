@@ -7,7 +7,7 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>ko-KR</language>
     <copyright>&amp;copy;Awslife 2019</copyright>
-    <lastBuildDate>Wed, 23 Oct 2019 23:41:00 +0900</lastBuildDate>
+    <lastBuildDate>Thu, 24 Oct 2019 22:52:40 +0900</lastBuildDate>
     
 	<atom:link href="http://awslife.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
     
@@ -15,7 +15,7 @@
     <item>
       <title>Kubernetes</title>
       <link>http://awslife.github.io/categories/kubernetes/</link>
-      <pubDate>Wed, 23 Oct 2019 23:41:00 +0900</pubDate>
+      <pubDate>Thu, 24 Oct 2019 22:52:40 +0900</pubDate>
       
       <guid>http://awslife.github.io/categories/kubernetes/</guid>
       <description></description>

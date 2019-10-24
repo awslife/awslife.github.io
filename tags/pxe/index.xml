@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>PXE on Awslife&#39;s blog</title>
+    <link>http://awslife.github.io/tags/pxe/</link>
+    <description>Recent content in PXE on Awslife&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ko-KR</language>
+    <copyright>&amp;copy;Awslife 2019</copyright>
+    <lastBuildDate>Thu, 24 Oct 2019 22:52:40 +0900</lastBuildDate>
+    
+	<atom:link href="http://awslife.github.io/tags/pxe/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>CoreOS booting with PXE</title>
+      <link>http://awslife.github.io/post/coreos-booting-with-pxe/</link>
+      <pubDate>Thu, 24 Oct 2019 22:52:40 +0900</pubDate>
+      
+      <guid>http://awslife.github.io/post/coreos-booting-with-pxe/</guid>
+      <description>CoreOS Cluster 구성 방법을 정리하다 PXE를 통한 부팅이 필요하여 구성 방법을 정리하였다. 모든 환경은 VMware 위에서 테스트되었다. 요구사항 PXE를 통한 원격 부팅을 하기 위해</description>
+    </item>
+    
+  </channel>
+</rss>

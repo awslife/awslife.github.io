@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+    
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-150727828-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+      
+  CoreOS booting with PXE &ndash; Awslife&#39;s blog
+
+    </title>
+    
+    
+    <meta name="description" property="og:description" content="CoreOS Cluster 구성 방법을 정리하다 PXE를 통한 부팅이 필요하여 구성 방법을 정리하였다. 모든 환경은 VMware 위에서 테스트되었다. 요구사항 PXE를 통한 원격 부팅을 하기 위해|Describe what your web page is about">
+    
+
+    <meta name="apple-mobile-web-app-title" content="Awslife&#39;s blog">
+    
+    
+    <link rel="icon" href="/favicon-64.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="mask-icon" size="any" href="/pinned-icon.svg">
+    
+    
+    
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@">
+    <meta name="twitter:creator" content="@">
+    <meta name="twitter:title" content="CoreOS booting with PXE | Awslife&#39;s blog">
+    <meta name="twitter:description" content="CoreOS Cluster 구성 방법을 정리하다 PXE를 통한 부팅이 필요하여 구성 방법을 정리하였다. 모든 환경은 VMware 위에서 테스트되었다. 요구사항 PXE를 통한 원격 부팅을 하기 위해|Describe what your web page is about">
+    <meta name="twitter:image" content="http://awslife.github.io/twitter-card.png">
+    
+
+
+    <link rel="stylesheet" href="/assets/syntax.css">
+    <link rel="stylesheet" href="/assets/primer-build.css">
+    <link rel="stylesheet" href="/assets/style.css">
+  </head>
+
+
+  <body class="bg-gray">
+    <div id="holy" class="container-lg bg-white h-100">
+
+      <div id="header" class="px-1 bg-white">
+        <nav class="UnderlineNav UnderlineNav--right px-2">
+  <a class="UnderlineNav-actions muted-link h2" href="http://awslife.github.io/">
+    Awslife&#39;s blog
+  </a>
+
+  
+  
+</nav>
+
+      </div>
+
+      <div role="main" id="main" class="holy-main markdown-body px-4 bg-white">
+        
+
+<div class="Subhead">
+  <div class="Subhead-heading">
+    <div class="h1 mt-3 mb-1">CoreOS booting with PXE</div>
+  </div>
+  <div class="Subhead-description">
+    
+
+
+<a href='/categories/kubernetes' class="muted-link">
+  <span class="Label Label--gray-darker">Kubernetes</span>
+</a>
+
+
+
+<a href='/tags/coreos' class="muted-link">
+  <span class="Label Label--gray">CoreOS</span>
+</a>
+
+<a href='/tags/container-os' class="muted-link">
+  <span class="Label Label--gray">Container OS</span>
+</a>
+
+<a href='/tags/vmware' class="muted-link">
+  <span class="Label Label--gray">VMware</span>
+</a>
+
+<a href='/tags/linux' class="muted-link">
+  <span class="Label Label--gray">Linux</span>
+</a>
+
+<a href='/tags/pxe' class="muted-link">
+  <span class="Label Label--gray">PXE</span>
+</a>
+
+
+
+    
+    <div class="float-md-right">
+      <span title="Lastmod: 2019-10-24. Published at: 2019-10-24.">
+        
+          Lastmod: 2019-10-24
+        
+      </span>
+    </div>
+    
+  </div>
+</div>
+<article>
+  
+  <section class="pb-6 mb-3 border-bottom">
+    
+
+<p>CoreOS Cluster 구성 방법을 정리하다 PXE를 통한 부팅이 필요하여 구성 방법을 정리하였다. 모든 환경은 VMware 위에서 테스트되었다.</p>
+
+<h2 id="요구사항">요구사항</h2>
+
+<p>PXE를 통한 원격 부팅을 하기 위해서는 DHCP, TFTP, PXE 서버가 필요하다. 각각의 서비스를 구성하는 방법을 모두 정리하기에는 너무 방대한 양이므로 여기에서는 구성 방법을 모두 생략하고 PXE 부팅 설정에만 집중하였다.</p>
+
+<h3 id="pxelinux-구성">pxelinux 구성</h3>
+
+<p>CoreOS에서 제공하는 pxe 옵션은 8개가 있으며 각 옵션에 대한 자세한 정보는 CoreOS 홈페이지에서 확인 가능하다.</p>
+
+<ul>
+<li>rootfstype=tmpfs : 쓰기 가능한 루트 파일 시스템에 tmpfs를 사용</li>
+<li>root=/dev/sda1, root=LABEL=ROOT, root=UUID=2c618316-d17a-4688-b43b-aa19d97ea821 처럼 표현 가능</li>
+<li>sshkey : 지정한 공개키를 core 사용자의 authrized_keys 파일에 추가 가능</li>
+<li>console : tty에서 커널 출력과 로그인 프롬프트를 활성화. 기본값은 tty0. console=tty0, console=ttyS0 처럼 여러번 지정 가능</li>
+<li>coreos.autologin : 패스워드 프롬프트 없이 쉘로 진입, 이 옵션을 사용할 경우 console 옵션과 결합하여 사용해야 함</li>
+<li>coreos.first_boot=1: ignition 구성을 다운로드하고 이를 통하여 부팅.</li>
+<li>coreos.config.url : 지정된 url에서 ignition 구성을 다운로드 한다. http, https, s3 및 tftp 방식 지원 가능</li>
+<li>ip : initramfs에 대한 임시 정적 네트워킹을 구성한다. dhcp가 없는 환경에서 최초 부트 프로비저닝에 유용하다.</li>
+</ul>
+
+<p>PXE 부팅을 위해 아래와 같은 트리를 구성하였다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~/Downloads/pxe$ tree pxe
+pxe
+├── boot.msg
+├── coreos
+│   ├── coreos-config.ign
+│   ├── coreos_production_pxe.vmlinuz
+│   ├── coreos_production_pxe_image.cpio.gz
+│   ├── oem.cpio.gz
+├── ldlinux.c32
+├── pxelinux.0
+└── pxelinux.cfg
+    └── default
+
+<span class="m">2</span> directories, <span class="m">11</span> files
+awslife@k8sdev:~/Downloads/pxe$</code></pre></div>
+<h3 id="default-파일">default 파일</h3>
+
+<p>PXE 부팅의 경우 GUID, MAC, IP 및 Default 순으로 부팅을 시도하며 세부 구성을 하지 않을 경우 마지막 순서인 default 파일을 읽어 부팅을 시도한다. 자세한 정보는 아래 Reference Url의 PXELINUX 링크에서 확인 가능하다. default에서는 coreos의 필수 필요 속성만을 설정하여 부팅되도록 설정하였다. 세부 정보는 아래와 같다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~/Downloads/pxe$ cat pxelinux.cfg/default
+default coreos
+prompt <span class="m">5</span>
+timeout <span class="m">15</span>
+
+display boot.msg
+
+label coreos
+  menu  label ^CoreOS
+  kernel coreos/coreos_production_pxe.vmlinuz
+  initrd coreos/coreos_production_pxe_image.cpio.gz
+  append coreos.first_boot<span class="o">=</span><span class="m">1</span> coreos.config.url<span class="o">=</span>tftp://192.168.11.253/coreos/coreos-config.ign
+awslife@k8sdev:~/Downloads/pxe$</code></pre></div>
+<h3 id="oem-구성">OEM 구성</h3>
+
+<p>CoreOS는 VMware 상에서 테스트되었기 때문에 CoreOS 내부에 vmtools 설치가 필요하다. CoreOS에서는 이런 경우를 위해 oem 환경을 구성할 수 있다. 이에 대한 세부 정보는 Reference URL의 Notes for distributors와 Running CoreOS Container Linux on VMware 항목을 참조하기 바란다.</p>
+
+<p>OEM 항목이 구성 완료되면 PXE 부팅시 반영은 매우 간단하다. initrd 마지막에 oem 관련 내용만 추가해주면 된다. <strong>oem.cpio.gz</strong>이 추가된걸 확인할 수 있다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">awslife@k8sdev:~/Downloads/pxe$ cat pxelinux.cfg/default
+default coreos
+prompt <span class="m">5</span>
+timeout <span class="m">15</span>
+
+display boot.msg
+
+label coreos
+  menu  label ^CoreOS
+  kernel coreos/coreos_production_pxe.vmlinuz
+  initrd coreos/coreos_production_pxe_image.cpio.gz,coreos/oem.cpio.gz
+  append coreos.first_boot<span class="o">=</span><span class="m">1</span> coreos.config.url<span class="o">=</span>tftp://192.168.11.253/coreos/coreos-config.ign
+awslife@k8sdev:~/Downloads/pxe$</code></pre></div>
+<h3 id="pxe-boot-확인">PXE Boot 확인</h3>
+
+<p>정상적으로 설정되었다면 정상적으로 부팅됨을 확인가능하며 vmtools 또한 시작되어 있음을 확인 가능하다.</p>
+<div class="highlight"><pre class="chroma"><code class="language-bash" data-lang="bash">core@localhost ~ $ sudo systemctl status vmtoolsd
+● vmtoolsd.service - VMware Tools Agent
+   Loaded: loaded <span class="o">(</span>/etc/systemd/system/vmtoolsd.service<span class="p">;</span> enabled<span class="p">;</span> vendor preset: enabled<span class="o">)</span>
+   Active: active <span class="o">(</span>running<span class="o">)</span> since Sat <span class="m">2019</span>-10-05 <span class="m">10</span>:41:25 UTC<span class="p">;</span> 9min ago
+     Docs: https://github.com/vmware/open-vm-tools
+  Process: <span class="m">769</span> <span class="nv">ExecStartPre</span><span class="o">=</span>/usr/bin/ln -sfT /usr/share/oem/vmware-tools /etc/vmware-tools <span class="o">(</span><span class="nv">code</span><span class="o">=</span>exited, <span class="nv">status</span><span class="o">=</span><span class="m">0</span>/SUCCESS<span class="o">)</span>
+ Main PID: <span class="m">779</span> <span class="o">(</span>vmtoolsd<span class="o">)</span>
+    Tasks: <span class="m">2</span> <span class="o">(</span>limit: <span class="m">12342</span><span class="o">)</span>
+   Memory: <span class="m">5</span>.8M
+   CGroup: /system.slice/vmtoolsd.service
+           └─779 /usr/share/oem/bin/vmtoolsd
+
+Oct <span class="m">05</span> <span class="m">10</span>:41:25 localhost systemd<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Starting VMware Tools Agent...
+Oct <span class="m">05</span> <span class="m">10</span>:41:25 localhost systemd<span class="o">[</span><span class="m">1</span><span class="o">]</span>: Started VMware Tools Agent.
+core@localhost ~ $</code></pre></div>
+<h2 id="reference-urls">Reference urls</h2>
+
+<ul>
+<li><a href="https://wiki.syslinux.org/wiki/index.php?title=PXELINUX">PXELINUX</a></li>
+<li><a href="https://coreos.com/os/docs/latest/booting-with-pxe.html">Booting CoreOS Container Linux via PXE</a></li>
+<li><a href="https://coreos.com/os/docs/latest/notes-for-distributors.html#image-customization">Notes for distributors</a></li>
+<li><a href="https://coreos.com/os/docs/latest/booting-on-vmware.html">Running CoreOS Container Linux on VMware</a></li>
+<li><a href="https://coreos.com/ignition/docs/latest/">Coreos Ignition Document</a></li>
+<li><a href="https://coreos.com/validate/">Ignition Config Validator</a></li>
+</ul>
+
+  </section>
+
+  <section>
+    
+      
+    
+		<script src="https://utteranc.es/client.js"
+        repo="awslife/awslife.github.io-comments"
+        issue-term="[ENTER TERM HERE]"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+    </script>
+  </section>
+</article>
+
+      </div>
+
+      <div id="side" class="pr-1 bg-white">
+        <aside class="pr-3">
+          
+  
+    <div id="toc" class="Box Box--blue mb-3">
+      <b>CoreOS booting with PXE</b>
+      <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#요구사항">요구사항</a>
+<ul>
+<li><a href="#pxelinux-구성">pxelinux 구성</a></li>
+<li><a href="#default-파일">default 파일</a></li>
+<li><a href="#oem-구성">OEM 구성</a></li>
+<li><a href="#pxe-boot-확인">PXE Boot 확인</a></li>
+</ul></li>
+<li><a href="#reference-urls">Reference urls</a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+  
+
+  
+    
+    
+      <div>
+        
+
+        
+          <iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width="61" height="20" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>
+        
+
+        
+
+        
+
+      </div>
+    
+  
+
+        </aside>
+      </div>
+
+      <div id="footer" class="pt-2 pb-3 bg-white text-center">
+        
+
+  <span class="text-small text-gray">
+    &copy;Awslife 2019 &middot; 
+
+    Powered by the
+    <a href="https://github.com/qqhann/hugo-primer" class="link-gray-dark">Hugo-Primer</a> theme for
+    <a href="https://gohugo.io" class="link-gray-dark">Hugo</a>.
+  </span>
+
+
+      </div>
+    </div>
+
+
+    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script>
+  </body>
+</html>
