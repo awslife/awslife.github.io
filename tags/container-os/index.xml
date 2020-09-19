@@ -7,38 +7,7 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>ko-KR</language>
     <copyright>&amp;copy;Awslife 2019</copyright>
-    <lastBuildDate>Thu, 24 Oct 2019 22:52:40 +0900</lastBuildDate>
-    
-	<atom:link href="http://awslife.github.io/tags/container-os/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-    <item>
-      <title>CoreOS booting with PXE</title>
-      <link>http://awslife.github.io/post/coreos-booting-with-pxe/</link>
-      <pubDate>Thu, 24 Oct 2019 22:52:40 +0900</pubDate>
-      
-      <guid>http://awslife.github.io/post/coreos-booting-with-pxe/</guid>
-      <description>CoreOS Cluster 구성 방법을 정리하다 PXE를 통한 부팅이 필요하여 구성 방법을 정리하였다. 모든 환경은 VMware 위에서 테스트되었다. 요구사항 PXE를 통한 원격 부팅을 하기 위해</description>
-    </item>
-    
-    <item>
-      <title>CoreOS Cluster Install</title>
-      <link>http://awslife.github.io/post/coreos-cluster-install/</link>
-      <pubDate>Wed, 23 Oct 2019 23:41:00 +0900</pubDate>
-      
-      <guid>http://awslife.github.io/post/coreos-cluster-install/</guid>
-      <description>CoreOS Cluster의 Kubernetes Master 서버 설치 방법을 정리하였다. Kubernetes Cluster 구성 정보 Master Node Master Node는 3대로 구성하였으며, 각 호스트는 사전에 DNS 구성을 완료하였으며, 모두 2</description>
-    </item>
-    
-    <item>
-      <title>CoreOS Install</title>
-      <link>http://awslife.github.io/post/coreos-install/</link>
-      <pubDate>Tue, 22 Oct 2019 21:19:29 +0900</pubDate>
-      
-      <guid>http://awslife.github.io/post/coreos-install/</guid>
-      <description>Kubernetes 멀티 노드 설치를 위해 CoreOS 설치 방법을 정리하였다. CoreOS 설치 CoreOS 홈페이지에서 CoreOS ISO 파일을 다운로드 후 이를 이용하여 CoreOS 설치를 위한 Console로 진입한다. 여기서</description>
-    </item>
-    
+    <lastBuildDate>Tue, 22 Oct 2019 21:01:32 +0900</lastBuildDate><atom:link href="http://awslife.github.io/tags/container-os/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>VMware Cmd Guide</title>
       <link>http://awslife.github.io/post/vmware-cmd-guide/</link>

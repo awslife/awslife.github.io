@@ -7,11 +7,7 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>ko-KR</language>
     <copyright>&amp;copy;Awslife 2019</copyright>
-    <lastBuildDate>Thu, 24 Oct 2019 23:40:44 +0900</lastBuildDate>
-    
-	<atom:link href="http://awslife.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Thu, 24 Oct 2019 23:40:44 +0900</lastBuildDate><atom:link href="http://awslife.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>How to Reduce Pandas Memory Usage</title>
       <link>http://awslife.github.io/post/how-to-reduce-pandas-memory-usage/</link>
