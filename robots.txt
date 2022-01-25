@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://awslife.github.io/sitemap.xml
