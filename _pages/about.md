@@ -1,8 +1,38 @@
 ---
 permalink: /about/
 title: "About"
+excerpt: "About Me"
+search: true
+last_modified_at: 2022-01-26T22:25:00+09:00
+toc: true
+
 ---
 
-Tempor velit sint sunt ipsum tempor enim ad qui ullamco. Est dolore anim ad velit duis dolore minim sunt aliquip amet commodo labore. Ut eu pariatur aute ea aute excepteur laborum. Esse ea esse excepteur minim mollit qui cillum excepteur ex dolore magna. Labore deserunt fugiat incididunt incididunt sint ea. Consequat dolore aute laboris quis proident quis non et est consectetur ex eiusmod sit culpa.
+## Profile
+<center><img src="/assets/image/me.jpg" width="30%" height="30%" style="
+border: 1px solid #cab6de;
+border-radius: 50%;
+padding: 5px;
+-moz-border-radius: 50%;
+-khtml-border-radius: 50%;
+-webkit-border-radius: 50%;
+"></center>
 
-Cupidatat ea do et in excepteur in. Ad nostrud ut est esse eu duis ea sunt eiusmod. Aliquip tempor veniam sint elit fugiat. Velit incididunt laboris amet incididunt labore dolore irure velit excepteur commodo deserunt laborum. Consectetur eu fugiat veniam veniam Lorem labore magna eiusmod. Ea occaecat reprehenderit pariatur consectetur minim labore ut aliquip.
+* NAME : Sunho, Song
+* MAJOR : Semiconductor Engineering
+
+## Career & Activities
+ - MLOps platform for semiconductor defect analysis (2020 ~ )
+ - Data Science Course in Seoul National University (2018.01 ~ 2018.06)
+ - Big Data and cloud (2015 ~ 2017)
+
+## Current Interest
+ * MLOps
+ * BigData
+ * Kubernetes, Cloud
+ * Data Center
+
+## Contact
+ * Email : awslife.song@gmail.com
+ * Git : [https://github.com/awslife](https://github.com/awslife)
+ * Blog : [https://awslife.medium.com/](https://awslife.medium.com/)

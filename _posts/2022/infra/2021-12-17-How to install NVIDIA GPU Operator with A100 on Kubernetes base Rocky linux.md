@@ -1,26 +1,24 @@
-# How to install NVIDIA GPU Operator with A100 on Kubernetes base Rocky linux
-
 In the meantime, how to configure nvidia gpu in kubernetes was very tricky. To provision a simple GPU pod, we had to build essential components such as drivers, container runtimes, device plugins, and monitoring. Recently, functions such as NVIDIA GPU Feature Discovery have been added to reduce the hassle for GPU configuration, but the system engineer’s thirst was not quenched because the NVIDIA Driver and Runtime had to be configured as it is. And since this part is difficult for conventional system engineers to access, a lot of focus has been placed on engineers with experience in GPU configuration.
 
-<img src="file:///Users/awslife/Library/Application%20Support/marktext/images/2022-01-25-22-59-55-image.png" title="" alt="" data-align="left">
+<img title="" src="/assets/img/infra/2022-01-25-22-59-55-image.png" alt="" data-align="left">
 
 ###### Fig1 [https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes](https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes/)
 
 Complex configuration to use GPUs in Kubernetes was all solved with the advent of NVIDIA GPU Operator. If you look at the NVIDIA GPU Operator-related content provided by the NVIDIA blog (Fig1), you can see that Driver, Runtime, Device Plugin, and Monitoring are all configured as containers. As a result, you no longer need to install the NVIDIA Driver in your OS. (It reminds me of the days when I stayed up all night to install the GPU Driver in the OS.)
 
-![](/Users/awslife/Library/Application%20Support/marktext/images/2022-01-25-23-01-24-image.png)
+![](/assets/img/infra/2022-01-25-23-01-24-image.png)
 
 ###### Fig2 https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes/
 
 Additionally, a feature called MIG was introduced on the NVIDIA A100 GPU. In the meantime, GPUs were limited to a function called Virtual GPU to use parallel processing functions like Hyper Threading of Intel CPUs. This was a function to use the GPU memory in parallel after fragmenting it, and to use it, an additional license fee was required, and it was also very difficult to manage because the GPU driver had to be installed in the Hypervisor and Guest OS. Basically, since the memory is fragmented and used, there is a problem that the size of a model that can be trained in Machine Learning or Deep Learning is reduced, so it was used limitedly in ML/DL and used a lot in Virtual Desktop Infrastructure.
 
-![](/Users/awslife/Library/Application%20Support/marktext/images/2022-01-25-23-02-10-image.png)
+![](/assets/img/infra/2022-01-25-23-02-10-image.png)
 
 ###### Fig3 [Using GPUs with Virtual Machines on vSphere – Part 3: Installing the NVIDIA Virtual GPU Technology - Virtualize Applications](https://blogs.vmware.com/apps/2018/09/using-gpus-with-virtual-machines-on-vsphere-part-3-installing-the-nvidia-grid-technology.html)
 
 The MIG function introduced in the A100 GPU partially solves the above problem by supporting virtualization on the GPU. One GPU can be divided into up to 7 instances, and since the GPU layer provides virtualization functions, the hypervisor part can be reduced, so there are management and performance gains, but the fragmentation of VRAM based on the instance is a disappointing part. This is also an unavoidable part of the GPU architecture.
 
-![](/Users/awslife/Library/Application%20Support/marktext/images/2022-01-25-23-03-32-image.png)
+![](/assets/img/infra/2022-01-25-23-03-32-image.png)
 
 ###### Fig4 [NVIDIA Multi-Instance GPU User Guide :: NVIDIA Tesla Documentation](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/)
 
@@ -118,7 +116,6 @@ $ helm install --wait \
       --set validator.version=v1.9.0-ubi8 \
       gpu-operator \
       nvidia/gpu-operator
-
 ```
 
 Don’t forget it. **f you use MIG’s mixed mode, node labels for instance slicing must be set in advance**. Use the command below to proceed with the node label.
@@ -157,11 +154,13 @@ You have seen how to configure to deploy gpu pods in kubernetes using NVIDIA gpu
 
 I hope it will be helpful to those who are looking for related content. And if you have saved a lot of time with this content, please donate a cup of coffee. (Please help me to write while eating ice americano at a local cafe.)
 
-[
 
-![https://buymeacoffee.com/7ov2xm5](https://miro.medium.com/max/60/0*i3Grzhj_9eMR9iLX.png?q=20)
 
-](https://buymeacoffee.com/7ov2xm5)
+![](/Users/awslife/Blogs/awslife.github.io/assets/7e6a7443ca4b279326519f6012b002ebff25eb3c.png)
+
+
+
+[buymeacoffee](https://buymeacoffee.com/7ov2xm5)
 
 # References
 
@@ -172,7 +171,3 @@ I hope it will be helpful to those who are looking for related content. And if y
 [Dependency errors when installing older versions of nvidia-container-runtime on Debian-based systems](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/platform-support.html#linux-distributions)
 
 [This edition of the user guide describes the Multi-Instance GPU feature of the NVIDIA® Ampere architectre.](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/)
-
-
-
-# 
