@@ -1,6 +1,6 @@
 In the meantime, how to configure nvidia gpu in kubernetes was very tricky. To provision a simple GPU pod, we had to build essential components such as drivers, container runtimes, device plugins, and monitoring. Recently, functions such as NVIDIA GPU Feature Discovery have been added to reduce the hassle for GPU configuration, but the system engineer’s thirst was not quenched because the NVIDIA Driver and Runtime had to be configured as it is. And since this part is difficult for conventional system engineers to access, a lot of focus has been placed on engineers with experience in GPU configuration.
 
-![](/assets/image/infra/2022-01-25-22-59-55-image.png)
+<center><img src="/assets/image/infra/2022-01-25-22-59-55-image.png"></center>
 
 ###### Fig1 [https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes](https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes/)
 
@@ -27,9 +27,7 @@ The MIG function introduced in the A100 GPU partially solves the above problem b
 Now, I will explain how to configure NVIDIA GPU Operator. First, let’s check the essential requirements to configure NVIDIA GPU Operator.
 
 - Kubernetes v1.19+
-
 - NVIDIA GPU Operator v1.9
-
 - Linux distributions  
   Ubuntu 18.04.z, 20.04.z LTS, Red Hat Enterprise Linux CoreOS (RHCOS) for use with OpenShift 4.8 and 4.9, **CentOS 7**
 
@@ -156,10 +154,9 @@ I hope it will be helpful to those who are looking for related content. And if y
 
 [buymeacoffee](https://buymeacoffee.com/7ov2xm5)
 
-
 # References
 
-[NVIDIA GPU Operator: Simplifying GPU Management in Kubernetes | NVIDIA Developer Blog](https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes/)
+[NVIDIA GPU Operator: Simplifying GPU Management in Kubernetes](https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes/)
 
 [Kubernetes provides access to special hardware resources such as NVIDIA GPUs, NICs, Infiniband adapters and other…](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/overview.html)
 
