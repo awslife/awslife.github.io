@@ -1,6 +1,6 @@
 In the meantime, how to configure nvidia gpu in kubernetes was very tricky. To provision a simple GPU pod, we had to build essential components such as drivers, container runtimes, device plugins, and monitoring. Recently, functions such as NVIDIA GPU Feature Discovery have been added to reduce the hassle for GPU configuration, but the system engineer’s thirst was not quenched because the NVIDIA Driver and Runtime had to be configured as it is. And since this part is difficult for conventional system engineers to access, a lot of focus has been placed on engineers with experience in GPU configuration.
 
-<center><img src="/assets/image/infra/2022-01-25-22-59-55-image.png"></center>
+![](/assets/image/infra/2022-01-25-22-59-55-image.png)
 
 ###### Fig1 [https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes](https://developer.nvidia.com/blog/nvidia-gpu-operator-simplifying-gpu-management-in-kubernetes/)
 
