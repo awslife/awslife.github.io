@@ -1,9 +1,9 @@
-# CI/CD pipeline configuration with tekton and argocd on Kubernetes
+# CI/CD pipeline configuration with Tekton and ArgoCD on Kubernetes
 
-Kubernetes 기반의 CI/CD 환경 구축을 위해서 tekton과 argocd를 사용하여 환경을 구성해보자.
+Kubernetes 기반의 CI/CD 환경 구축을 위해서 Tekton과 ArgoCD를 사용하여 환경을 구성해보자.
 
-- 1. Tekton installation
-- 2. Tekton dashboard installation
+- Tekton installation
+- Tekton dashboard installation
 
 ## Prerequisites
 
@@ -70,7 +70,7 @@ service/tekton-pipelines-webhook created
 정상적으로 설치되었는지 아래의 명령어로 확인 가능하다.
 
 ```console
-$ kubectl --namespace tekton-pipelines get pods
+$ kubectl get -n tekton-pipelines pods
 NAME                                          READY   STATUS    RESTARTS   AGE
 tekton-pipelines-controller-956886f78-pfdzp   1/1     Running   0          48s
 tekton-pipelines-webhook-6c6446886c-wx4f6     1/1     Running   0          48s
@@ -90,7 +90,7 @@ $ kubectl create configmap config-artifact-pvc \
                          --from-literal=bucket.service.account.secret.key=${S3_SECKEY} \
                          -o yaml -n tekton-pipelines \
                          --dry-run=client | kubectl replace -f -
-$ kubectl --namespace tekton-pipelines get configmaps config-artifact-pvc -o yaml
+$ kubectl get -n tekton-pipelines configmaps config-artifact-pvc -o yaml
 apiVersion: v1
 data:
   bucket.service.account.secret.key: Super$tr0ng

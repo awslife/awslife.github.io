@@ -1,8 +1,9 @@
-# CI/CD pipeline configuration with tekton and argocd on Kubernetes
-Kubernetes 기반의 CI/CD 환경 구축을 위해서 tekton과 argocd를 사용하여 환경을 구성해보자.
+# CI/CD pipeline configuration with Tekton and ArgoCD on Kubernetes
 
-- 1. Tekton installation
-- 2. Tekton dashboard installation
+Kubernetes 기반의 CI/CD 환경 구축을 위해서 Tekton과 ArgoCD를 사용하여 환경을 구성해보자.
+
+- Tekton installation
+- Tekton dashboard installation
 
 ## Prerequisites
 
@@ -32,7 +33,7 @@ clusterrolebinding.rbac.authorization.k8s.io/tekton-dashboard-tenant created
 Tekton dashboard 설치가 완료되면 정상적으로 pod가 실행되는지 확인하도록 하자. 아래와 같이 tekton-dashboard가 정상적으로 실행되는것을 확인 할 수 있다.
 
 ```console
-$ kubectl get -namespace tekton-pipelines pods
+$ kubectl get -n tekton-pipelines pods
 NAME                                          READY   STATUS    RESTARTS   AGE
 tekton-dashboard-5d44ff59bd-x2lrv             1/1     Running   0          33s
 tekton-pipelines-controller-956886f78-pfdzp   1/1     Running   0          125m
@@ -41,7 +42,16 @@ tekton-pipelines-webhook-6c6446886c-wx4f6     1/1     Running   0          125m
 
 ## Configuration Tekton dashboard ingress
 
-dashboard 설치 후 외부 접속을 위한 ingress 설정을 진행하자.
+dashboard 설치 후 외부 접속을 위한 ingress 설정을 진행하자. 여기에서는 HTTPS를 기본 설정으로 진행됨으로 ingress에서 사용하는 Self Signed Certificate를 먼저 준비하도록 하자. 준비된 인증서로 secret을 생성한다.
+
+```console
+$ kubectl create -n tekton-pipelines secret generic tls-secret \
+  --from-file=tls.crt=./tekton.homelab.local.crt \
+  --from-file=tls.key=./tekton.homelab.local.key
+secret/tls-secret created
+```
+
+secret 생성이 완료되면 바로 Tekton dashboard를 위한 ingress를 설정하도록 한다.
 
 ```console
 $ export TEKTON_DASHBOARD_HOSTNAME=tekton.homelab.local
@@ -64,6 +74,10 @@ spec:
             name: tekton-dashboard
             port:
               number: 9097
+  tls:
+    - hosts:
+        - $TEKTON_DASHBOARD_HOSTNAME
+      secretName: tls-secret
 EOF
 ingress.networking.k8s.io/tekton-dashboard created
 ```
